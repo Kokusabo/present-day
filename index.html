@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>present day</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="eyes, flowers, two girls, the wires, snow. an ascii transmission with no sender.">
+<meta name="theme-color" content="#050507">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Noto+Serif+JP:wght@400;900&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<noscript><p class="noscript">the wired needs javascript. turn it on and come back.</p></noscript>
+
+<div class="boot" id="boot" aria-hidden="true"><pre id="boot-log"></pre></div>
+
+<div class="fx" aria-hidden="true">
+  <div class="fx-noise"></div>
+  <div class="fx-scan"></div>
+  <div class="fx-vignette"></div>
+</div>
+<div class="trail" id="trail" aria-hidden="true"></div>
+<div class="glitches" id="glitches" aria-hidden="true"></div>
+<div class="heaven-light" id="heaven-light" aria-hidden="true"><span>heaven!</span></div>
+
+<header class="bar" id="top">
+  <div class="bar-in">
+    <a class="brand" href="#top">present day</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#see">see</a>
+      <a href="#bloom">bloom</a>
+      <a href="#doll">doll</a>
+      <a href="#wired">wired</a>
+      <a href="#snow">snow</a>
+      <a href="#void">&#8709;</a>
+    </nav>
+    <time class="clock" id="clock">--:--:--</time>
+    <button class="hum" id="hum" type="button" aria-pressed="false">hum <span class="hum-state">off</span></button>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="sec see" id="see" aria-labelledby="see-title">
+    <p class="idx"><span>01</span> eye_01.raw <span class="peep" aria-hidden="true"></span></p>
+    <canvas id="cv-eye" class="ascii" role="img" aria-label="A large ASCII eye with a red iris. It follows your cursor."></canvas>
+    <div class="see-under">
+      <h1 class="whisper" id="see-title" data-scramble>it only blinks when you are not looking</h1>
+      <p class="stats">
+        <span>status <b id="eye-status">waiting</b></span>
+        <span>gaze <b id="eye-gx">+0.00</b> <b id="eye-gy">+0.00</b></span>
+        <span>pupil <b id="eye-pupil">4.1 mm</b></span>
+        <span>blinks <b id="eye-blinks">0</b></span>
+      </p>
+    </div>
+  </section>
+
+  <div class="ticker" aria-label="Song titles">
+    <div class="ticker-track" id="ticker">
+      <span>duvet <i>bôa</i></span>
+      <span>fly me to the moon <i>bart howard</i></span>
+      <span>komm, süsser tod <i>arianne</i></span>
+      <span>how to disappear completely <i>radiohead</i></span>
+      <span>fade into you <i>mazzy star</i></span>
+      <span>heaven or las vegas <i>cocteau twins</i></span>
+      <span>when the sun hits <i>slowdive</i></span>
+      <span>avril 14th <i>aphex twin</i></span>
+      <span>there is a light that never goes out <i>the smiths</i></span>
+    </div>
+  </div>
+
+  <section class="sec bloom" id="bloom" aria-labelledby="bloom-title">
+    <p class="idx"><span>02</span> higanbana.txt</p>
+    <div class="bloom-grid">
+      <figure class="art">
+        <canvas id="cv-bloom" class="ascii" role="img" aria-label="An ASCII bouquet of lilies and red spider lilies, swaying. Petals fall."></canvas>
+        <figcaption>tap to let them fall</figcaption>
+      </figure>
+      <div class="bloom-text">
+        <p class="kanji" aria-hidden="true">花</p>
+        <h2 class="big" id="bloom-title" data-scramble>flowers for no one.
+flowers anyway.</h2>
+        <p class="note">彼岸花. the flower of the other shore. it blooms after its leaves are gone, and the leaves grow back after it dies. they never meet.</p>
+        <p class="facts">water: none &nbsp;/&nbsp; light: monitor, 60 hz &nbsp;/&nbsp; visitors: 0 &nbsp;/&nbsp; day <span id="garden-day">0</span></p>
+        <blockquote class="lyric"><p>everything in its right place</p><cite>radiohead</cite></blockquote>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec doll" id="doll" aria-labelledby="doll-title">
+    <p class="idx"><span>03</span> doll_07.bmp <span class="peep" aria-hidden="true"></span></p>
+    <div class="doll-grid">
+      <figure class="art">
+        <canvas id="cv-doll" class="ascii" role="img" aria-label="A girl's silhouette in profile with a ribbon in her long hair, looking up at a huge ASCII moon."></canvas>
+        <figcaption>tap the moon</figcaption>
+      </figure>
+      <div class="doll-text">
+        <p class="card-jp" lang="ja" aria-hidden="true">人形じゃない</p>
+        <h2 class="card" id="doll-title">I am not<br>a doll.</h2>
+        <p class="doll-stats">
+          <span>name <b>none</b></span>
+          <span>joints <b>14</b></span>
+          <span>strings <b>cut</b></span>
+          <span>heartbeat <b id="bpm">61 bpm</b></span>
+          <span>temperature <b id="temp">35.1 &deg;C</b></span>
+          <span>you last moved <b id="still">0 s</b> ago</span>
+        </p>
+        <div class="dialog">
+          <p>&mdash; what face should i make now?</p>
+          <p>&mdash; any. it's yours.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec wired" id="wired" aria-labelledby="pd-label">
+    <p class="idx"><span>04</span> ch.07 &middot; 50 hz</p>
+    <div class="present" id="present">
+      <h2 class="visually-hidden" id="pd-label">present day. present time.</h2>
+      <p class="pd" aria-hidden="true"><span id="pd1">PRESENT DAY</span></p>
+      <p class="pd" aria-hidden="true"><span id="pd2">PRESENT TIME</span></p>
+      <p class="laugh" id="laugh" aria-hidden="true">ahahahahahahahaha</p>
+    </div>
+    <div class="wired-grid">
+      <figure class="art">
+        <canvas id="cv-wired" class="ascii" role="img" aria-label="Green ASCII line drawing of a girl in profile wearing large headphones, a cable falling from them."></canvas>
+        <figcaption>she is listening to something you can't hear</figcaption>
+      </figure>
+      <figure class="art">
+        <canvas id="cv-lines" class="ascii" role="img" aria-label="ASCII power lines under a white sky. The shadows have red spots in them."></canvas>
+        <figcaption>the wires hum at 50 hz</figcaption>
+      </figure>
+    </div>
+    <div class="term" id="term">
+      <div class="term-out" id="term-out" role="log" aria-live="polite"></div>
+      <form class="term-line" id="term-form" autocomplete="off">
+        <label for="term-in">guest@wired:~$</label>
+        <input id="term-in" name="cmd" type="text" spellcheck="false" autocapitalize="off" autocorrect="off" enterkeyhint="send" placeholder="help">
+      </form>
+    </div>
+    <p class="whisper" data-scramble>wherever you are, everyone is connected</p>
+  </section>
+
+  <section class="sec snow" id="snow" aria-labelledby="snow-title">
+    <p class="idx"><span>05</span> block 9 &middot; &minus;14&deg;c <span class="peep" aria-hidden="true"></span></p>
+    <h2 class="visually-hidden" id="snow-title">snow</h2>
+    <figure class="art">
+      <canvas id="cv-snow" class="ascii" role="img" aria-label="An ASCII apartment block at night in falling snow. Its windows switch on and off."></canvas>
+      <figcaption class="snow-cap"><span>9 floors.</span> <span><b id="lights">0</b> lights.</span> <span>nobody is awake.</span> <span class="hint">tap a window</span></figcaption>
+    </figure>
+  </section>
+
+  <section class="sec void" id="void" aria-labelledby="void-title">
+    <p class="idx"><span>06</span> end of transmission</p>
+    <h2 class="visually-hidden" id="void-title">end of transmission</h2>
+    <div class="void-grid">
+      <figure class="art moon-art">
+        <canvas id="cv-moon" class="ascii" role="img" aria-label="A slowly turning ASCII moon going through its phases."></canvas>
+        <figcaption>fly me to the moon &middot; tap for an eclipse</figcaption>
+      </figure>
+      <div class="void-side">
+        <div class="heaven">
+          <button class="heaven-box" id="heaven-box" type="button" aria-pressed="false" aria-label="heaven"></button>
+          <span class="heaven-arrow" aria-hidden="true">&lt;</span>
+          <span class="heaven-word" id="heaven-word">heaven!</span>
+        </div>
+        <div class="wmp" id="wmp">
+          <div class="wmp-title"><span>wired media player</span><span class="wmp-win" aria-hidden="true">_ &#9633; &times;</span></div>
+          <div class="wmp-screen">
+            <pre id="wmp-vis" aria-hidden="true"></pre>
+            <div class="wmp-q" id="wmp-q" aria-hidden="true"></div>
+          </div>
+          <p class="wmp-now"><span id="wmp-track">&mdash;</span></p>
+          <div class="wmp-bar" aria-hidden="true"><span id="wmp-prog"></span></div>
+          <div class="wmp-ctl">
+            <button type="button" id="wmp-prev" aria-label="Previous track">|&lt;</button>
+            <button type="button" id="wmp-play" aria-label="Play">&gt;</button>
+            <button type="button" id="wmp-next" aria-label="Next track">&gt;|</button>
+            <span class="wmp-time" id="wmp-time">00:00</span>
+            <span class="wmp-status" id="wmp-status">ready</span>
+          </div>
+          <ol class="wmp-list" id="wmp-list"></ol>
+        </div>
+      </div>
+    </div>
+    <div class="hexwrap"><pre class="hexdump" id="hexdump"></pre></div>
+    <div class="closing">
+      <p class="whisper" data-scramble>close the world. txen eht nepo.</p>
+      <p class="aside">you can close this tab. we will still be here.</p>
+      <a class="up" href="#top">return to the eye</a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <span>&#8709; 1998&ndash;<span id="year">2026</span></span>
+  <span>no cookies. no trackers. only eyes.</span>
+  <span class="peep" aria-hidden="true"></span>
+</footer>
+
+<script src="js/ascii.js"></script>
+<script src="js/scenes.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
