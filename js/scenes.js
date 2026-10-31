@@ -467,41 +467,43 @@
    * MOON - a shaded sphere with craters and phases
    * ==================================================================== */
   function Moon() {
-    var st = { blood: false, img: null };
+    var st = { blood: false, img: null, phase: 0.5 };
     var cr = [], stars = [];
     var r = rng(11);
-    for (var i = 0; i < 30; i++) {
-      var lon = r() * TAU, lat = (r() - 0.5) * 2.4, mare = i < 7;
+    for (var i = 0; i < 34; i++) {
+      var lon = r() * TAU, lat = (r() - 0.5) * 2.4, mare = i < 8;
       cr.push({
         x: Math.cos(lat) * Math.sin(lon), y: Math.sin(lat), z: Math.cos(lat) * Math.cos(lon),
-        rad: mare ? 0.32 + r() * 0.3 : 0.05 + r() * r() * 0.24,
+        rad: mare ? 0.3 + r() * 0.3 : 0.04 + r() * r() * 0.22,
         depth: mare ? 0.3 + r() * 0.14 : 0.4 + r() * 0.4,
         mare: mare
       });
     }
-    for (i = 0; i < 46; i++) stars.push({ x: r(), y: r(), p: r() * TAU, b: 0.25 + r() * 0.5 });
+    for (i = 0; i < 70; i++) stars.push({ x: r(), y: r(), p: r() * TAU, b: 0.25 + r() * 0.6 });
     return {
       state: st,
       click: function (x, y, v) { st.blood = !st.blood; v.kick(0.4); },
-      resize: function (v) { st.img = v.sctx.createImageData(v.cols, v.rows); },
+      resize: function (v) { st.img = v.sctx.createImageData(v.sw, v.sh); },
       draw: function (ctx, v, t) {
-        var img = st.img, d = img.data, cols = v.cols, rows = v.rows, asp = v.aspect;
-        var cx = v.W / 2, cy = v.H / 2, R = Math.min(v.W, v.H) * 0.4;
-        var rot = t * 0.05, ph = Math.sin(t * 0.045 + 0.6) * 1.35;
-        var Lx = Math.sin(ph), Ly = -0.18, Lz = Math.cos(ph);
+        var img = st.img, d = img.data, sw = v.sw, sh = v.sh, ss = v.ss, asp = v.aspect;
+        var cx = v.W / 2, cy = v.H / 2, R = Math.min(v.W, v.H) * 0.42;
+        var rot = t * 0.03;
+        var th = st.phase * TAU + Math.sin(t * 0.2) * 0.02;
+        var Lx = Math.sin(th), Ly = -0.12, Lz = -Math.cos(th);
         var ln = Math.sqrt(Lx * Lx + Ly * Ly + Lz * Lz); Lx /= ln; Ly /= ln; Lz /= ln;
         var cR = Math.cos(rot), sR = Math.sin(rot);
-        var tint = st.blood ? [255, 46, 36] : [242, 236, 224];
+        var tint = st.blood ? [255, 52, 40] : [244, 238, 228];
         var c, o, val;
-        for (var y = 0; y < rows; y++) {
-          var dy = ((y + 0.5) * asp - cy) / R;
-          for (var x = 0; x < cols; x++) {
-            var dx = (x + 0.5 - cx) / R, d2 = dx * dx + dy * dy;
+        for (var y = 0; y < sh; y++) {
+          var dy = ((y + 0.5) / ss * asp - cy) / R;
+          for (var x = 0; x < sw; x++) {
+            var dx = ((x + 0.5) / ss - cx) / R, d2 = dx * dx + dy * dy;
             if (d2 < 1) {
               var nz = Math.sqrt(1 - d2);
-              var lam = dx * Lx + dy * Ly + nz * Lz; if (lam < 0) lam = 0;
+              var lam = dx * Lx + dy * Ly + nz * Lz;
+              lam = lam < 0 ? 0 : Math.pow(lam, 0.7);
               var px = dx * cR - nz * sR, pz = dx * sR + nz * cR, py = dy;
-              var alb = 0.8;
+              var alb = 0.82;
               for (var i = 0; i < cr.length; i++) {
                 c = cr[i];
                 var cd = px * c.x + py * c.y + pz * c.z;
@@ -514,376 +516,26 @@
                   }
                 }
               }
-              val = alb * (0.09 + 0.91 * Math.pow(lam, 0.75)) * (0.82 + 0.18 * nz);
+              // soft terminator, faint earthshine, darker limb
+              val = alb * (0.11 + 0.89 * lam) * (0.78 + 0.22 * nz);
             } else {
-              val = 0.13 * Math.exp(-(Math.sqrt(d2) - 1) * 6);
+              val = 0.16 * Math.exp(-(Math.sqrt(d2) - 1) * 5);
             }
-            o = (y * cols + x) * 4;
+            o = (y * sw + x) * 4;
             d[o] = val * tint[0]; d[o + 1] = val * tint[1]; d[o + 2] = val * tint[2]; d[o + 3] = 255;
           }
         }
         for (i = 0; i < stars.length; i++) {
-          var s = stars[i], sx = (s.x * cols) | 0, sy = (s.y * rows) | 0;
+          var s = stars[i], sx = (s.x * v.cols) | 0, sy = (s.y * v.rows) | 0;
           var ddx = (sx + 0.5 - cx) / R, ddy = ((sy + 0.5) * asp - cy) / R;
-          if (ddx * ddx + ddy * ddy < 1.3) continue;
-          val = s.b * (0.5 + 0.5 * Math.sin(t * 1.8 + s.p));
-          o = (sy * cols + sx) * 4;
-          d[o] = d[o + 1] = d[o + 2] = val * 255;
+          if (ddx * ddx + ddy * ddy < 1.4) continue;
+          val = s.b * (0.5 + 0.5 * Math.sin(t * 1.6 + s.p)) * 255;
+          for (var yy = 0; yy < ss; yy++) for (var xx = 0; xx < ss; xx++) {
+            o = ((sy * ss + yy) * sw + sx * ss + xx) * 4;
+            d[o] = d[o + 1] = d[o + 2] = val;
+          }
         }
         ctx.putImageData(img, 0, 0);
-      }
-    };
-  }
-
-  /* ====================================================================
-   * TWO GIRLS - original characters drawn as ascii line art.
-   * Fills are dim (they become light texture); contours are inked straight
-   * into character cells, and every shape hides the lines behind it.
-   * ==================================================================== */
-  function Path() { this.subs = []; this.cur = null; this.x = 0; this.y = 0; }
-  Path.prototype.M = function (x, y) { this.cur = [x, y]; this.subs.push(this.cur); this.x = x; this.y = y; return this; };
-  Path.prototype.L = function (x, y) { this.cur.push(x, y); this.x = x; this.y = y; return this; };
-  Path.prototype.Q = function (cx, cy, x, y) {
-    var x0 = this.x, y0 = this.y;
-    var n = clamp(Math.ceil((Math.hypot(cx - x0, cy - y0) + Math.hypot(x - cx, y - cy)) / 1.1), 2, 40);
-    for (var i = 1; i <= n; i++) {
-      var t = i / n, u = 1 - t;
-      this.cur.push(u * u * x0 + 2 * u * t * cx + t * t * x, u * u * y0 + 2 * u * t * cy + t * t * y);
-    }
-    this.x = x; this.y = y; return this;
-  };
-  Path.prototype.C = function (ax, ay, bx, by, x, y) {
-    var x0 = this.x, y0 = this.y;
-    var n = clamp(Math.ceil((Math.hypot(ax - x0, ay - y0) + Math.hypot(bx - ax, by - ay) + Math.hypot(x - bx, y - by)) / 1.1), 2, 60);
-    for (var i = 1; i <= n; i++) {
-      var t = i / n, u = 1 - t;
-      this.cur.push(u * u * u * x0 + 3 * u * u * t * ax + 3 * u * t * t * bx + t * t * t * x,
-        u * u * u * y0 + 3 * u * u * t * ay + 3 * u * t * t * by + t * t * t * y);
-    }
-    this.x = x; this.y = y; return this;
-  };
-  // a gently waving line from the current point to (x1, y1)
-  Path.prototype.W = function (x1, y1, amp, waves, phase) {
-    var x0 = this.x, y0 = this.y, n = 36;
-    var dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len;
-    for (var i = 1; i <= n; i++) {
-      var t = i / n, o = Math.sin(t * TAU * waves + (phase || 0)) * amp * Math.sin(t * Math.PI);
-      this.cur.push(x0 + dx * t + nx * o, y0 + dy * t + ny * o);
-    }
-    this.x = x1; this.y = y1; return this;
-  };
-  Path.prototype.Z = function () { this.cur.push(this.cur[0], this.cur[1]); return this; };
-  Path.prototype.trace = function (ctx) {
-    ctx.beginPath();
-    for (var s = 0; s < this.subs.length; s++) {
-      var p = this.subs[s];
-      ctx.moveTo(p[0], p[1]);
-      for (var i = 2; i < p.length; i += 2) ctx.lineTo(p[i], p[i + 1]);
-    }
-    return this;
-  };
-  Path.prototype.fill = function (ctx, style) { this.trace(ctx); ctx.fillStyle = style; ctx.fill(); return this; };
-  Path.prototype.cover = function (v, ctx, style) { this.fill(ctx, style); v.mask(ctx, this.subs); return this; };
-  Path.prototype.ink = function (v, ctx, color, ch) {
-    for (var s = 0; s < this.subs.length; s++) v.ink(ctx, this.subs[s], color, ch);
-    return this;
-  };
-  function P() { return new Path(); }
-  function oval(cx, cy, rx, ry, rot, a0, a1) {
-    var p = P(), n = 40, c = Math.cos(rot || 0), s = Math.sin(rot || 0);
-    a0 = a0 || 0; a1 = a1 === undefined ? TAU : a1;
-    for (var i = 0; i <= n; i++) {
-      var a = a0 + (a1 - a0) * i / n, x = Math.cos(a) * rx, y = Math.sin(a) * ry;
-      if (i) p.L(cx + x * c - y * s, cy + x * s + y * c); else p.M(cx + x * c - y * s, cy + x * s + y * c);
-    }
-    return p;
-  }
-  // x mirrored around the middle of the 100-unit design space
-  function mir(f) { return f ? function (x) { return 100 - x; } : function (x) { return x; }; }
-  function crop(v, x0, y0, w, h) {
-    var F = fit(v, w, h, 1, 0.5, 0.5);
-    return { s: F.s, x: F.x - x0 * F.s, y: F.y - y0 * F.s };
-  }
-  function blinker(st, t, dt, lo, hi) {
-    if (st.blinkT < 0 && t > st.next) st.blinkT = 0;
-    if (st.blinkT >= 0) {
-      st.blinkT += dt;
-      var p = st.blinkT / 0.22;
-      st.blink = p < 0.4 ? p / 0.4 : p < 0.55 ? 1 : Math.max(0, 1 - (p - 0.55) / 0.45);
-      if (p >= 1) { st.blinkT = -1; st.blink = 0; st.next = t + rand(lo, hi); }
-    }
-  }
-
-  function hexField(ctx, v, t, ripples, color) {
-    var R = 4.4, w = Math.sqrt(3) * R, h = 1.5 * R;
-    ctx.lineWidth = 0.4;
-    for (var row = -1; row * h < v.H + R; row++) {
-      for (var col = -1; col * w < v.W + w; col++) {
-        var x = col * w + (row % 2 ? w / 2 : 0), y = row * h, a = 0;
-        for (var i = 0; i < ripples.length; i++) {
-          var rp = ripples[i], age = t - rp.t, rad = age * 55;
-          var d = Math.sqrt((x - rp.x) * (x - rp.x) + (y - rp.y) * (y - rp.y));
-          a += Math.exp(-((d - rad) * (d - rad)) / 30) * Math.max(0, 1 - age / 1.5);
-        }
-        if (a < 0.02) continue;
-        ctx.strokeStyle = 'rgba(' + color + ',' + Math.min(1, a) + ')';
-        ctx.beginPath();
-        for (var k = 0; k < 6; k++) {
-          var an = Math.PI / 6 + k * Math.PI / 3;
-          var px = x + Math.cos(an) * R * 0.9, py = y + Math.sin(an) * R * 0.9;
-          if (k) ctx.lineTo(px, py); else ctx.moveTo(px, py);
-        }
-        ctx.closePath(); ctx.stroke();
-      }
-    }
-  }
-
-  /* ---------- the doll: a silhouette in profile, looking up at the moon ---------- */
-  var DOLL = {
-    moonHi: '#f2eefb', moonLo: '#7e7a96', crater: 'rgba(60,56,84,0.35)',
-    rim: '#ffffff', rimSoft: '#cfc6f2', line: '#6d6890', bow: '#e8607a'
-  };
-  function dollProfile(p) {
-    return p.C(40.8, 24, 37.6, 28.5, 37, 33.5).C(36.6, 37, 36.8, 40, 37.6, 42).Q(37.8, 43.4, 36.9, 44.8)
-      .C(35.8, 47, 34.6, 49.4, 33.8, 51.2).Q(33.4, 52.3, 34.4, 52.7).Q(35.4, 53.1, 36, 53.8)
-      .Q(36.2, 55, 35.8, 56).Q(35.3, 56.7, 35.9, 57.3).Q(36.4, 57.7, 36.1, 58.1).Q(35.7, 58.7, 36.2, 59.5)
-      .Q(37, 60.2, 36.9, 61.2).C(36.7, 62.8, 37.2, 65, 39, 66.2).C(43, 68, 50, 65.5, 56, 61);
-  }
-  // drawn facing left in design space; the caller mirrors it so she faces the moon
-  function dollFigure(v, ctx, st, t) {
-    var c = DOLL, sw = Math.sin(t * 0.8) * 0.5, black = '#000000';
-
-    // long hair falling behind her back
-    var hair = P().M(42, 23).C(44, 13, 56, 9, 66, 11).C(78, 14, 84.5, 26, 84.5, 40)
-      .C(84.5, 56, 88, 74, 93 + sw, 92).W(99 + sw, 126, 1.6, 2, t * 0.7)
-      .L(70 + sw, 126).W(63, 74, 1.4, 2, -t * 0.7).L(58, 46).L(48, 32).Z();
-    hair.cover(v, ctx, black);
-    hair.ink(v, ctx, c.line);
-    P().M(78, 30).C(80, 50, 83, 70, 86 + sw, 92).W(90 + sw, 124, 1.2, 2, t * 0.7 + 1).ink(v, ctx, c.line);
-
-    // dress with a high frilled collar
-    var dress = P().M(10, 126).C(17, 104, 30, 93, 43.2, 88).Q(51, 87, 60, 85).C(71, 87, 85, 95, 94, 126).Z();
-    dress.cover(v, ctx, black); dress.ink(v, ctx, c.line);
-    var neck = P().M(41.5, 64.5).C(42.5, 70, 43, 76, 43.6, 82).L(58.6, 80).C(58.4, 72, 58.2, 66, 57.6, 58).Z();
-    neck.cover(v, ctx, black);
-    P().M(41.8, 66).C(42.6, 71, 43, 75, 43.4, 79).ink(v, ctx, c.rimSoft);
-    var collar = P().M(42.6, 78.5).Q(50.5, 77, 58.8, 76).L(59.8, 85.5).Q(51, 87.4, 43.4, 88).Z();
-    collar.cover(v, ctx, black);
-    P().M(42.4, 78.2).Q(50.5, 76.7, 58.8, 75.7).ink(v, ctx, c.rimSoft, '~');
-    P().M(43.4, 88).Q(51, 87.4, 59.8, 85.5).ink(v, ctx, c.line, '~');
-
-    // head
-    var head = dollProfile(P().M(44.6, 22)).L(61, 54).L(67, 30).L(57, 19).Z();
-    head.cover(v, ctx, black);
-    dollProfile(P().M(44.6, 22)).ink(v, ctx, c.rim);
-
-    // eye: long lashes, a glint, looking up
-    var open = 1 - st.blink, lid = lerp(45.8, 43.6, open);
-    P().M(43, 44.6).Q(41, lid - 0.9, 38.9, 44.6).L(37.2, 43.2).ink(v, ctx, c.rim);
-    P().M(39.8, 44.2).L(38.6, 42.4).ink(v, ctx, c.rim);
-    if (open > 0.3) {
-      P().M(40.2, 45.6).ink(v, ctx, c.rimSoft, '.');
-      P().M(42.4, 47.2).Q(40.8, 47.4, 39.4, 46.6).ink(v, ctx, c.line);
-    }
-
-    // fringe and a lock in front of the ear
-    var fringe = P().M(57, 16).C(48, 15, 40.5, 19, 37, 27).Q(35.6, 31, 35.8, 35.5).L(38.6, 32)
-      .Q(38.8, 36, 40, 39.5).L(41.8, 33.5).Q(43.2, 37, 45.4, 39).L(46, 31).L(57, 30).Z();
-    fringe.cover(v, ctx, black);
-    P().M(57, 16).C(48, 15, 40.5, 19, 37, 27).Q(35.6, 31, 35.8, 35.5).ink(v, ctx, c.rimSoft);
-    var lock = P().M(50, 30).C(53, 44, 52 + sw, 60, 50.5 + sw, 76).L(53.6 + sw, 71).C(55.6, 56, 56.6, 42, 56, 32).Z();
-    lock.cover(v, ctx, black); lock.ink(v, ctx, c.line);
-    P().M(42, 23).C(44, 13, 56, 9, 66, 11).C(76, 13.5, 82, 21, 84, 32).ink(v, ctx, c.rimSoft);
-
-    // a ribbon bow at the back of her head
-    ctx.save(); ctx.translate(76, 21); ctx.rotate(0.35 + Math.sin(t * 0.9) * 0.04);
-    var l1 = oval(-4.2, -1.6, 5, 3, -0.5).Z(), l2 = oval(4.4, -1.2, 5, 3, 0.45).Z();
-    l1.cover(v, ctx, black); l2.cover(v, ctx, black);
-    l1.ink(v, ctx, c.bow); l2.ink(v, ctx, c.bow);
-    P().M(-0.6, 1).Q(-2 + sw, 8, -1 + sw * 1.5, 15).ink(v, ctx, c.bow);
-    P().M(0.8, 1).Q(3 + sw, 7, 3.6 + sw * 1.5, 13).ink(v, ctx, c.bow);
-    P().M(0, 0).ink(v, ctx, c.bow, 'o');
-    ctx.restore();
-  }
-
-  function Doll() {
-    var st = { blink: 0, blinkT: -1, next: 2.4, ripples: [], nextField: 7 };
-    var stars = [], craters = [], r = rng(41), i;
-    for (i = 0; i < 50; i++) stars.push({ x: r(), y: r(), p: r() * TAU });
-    for (i = 0; i < 16; i++) craters.push({ a: r() * TAU, d: Math.sqrt(r()) * 0.82, s: 0.04 + r() * r() * 0.16 });
-    return {
-      state: st,
-      click: function (x, y, v) { st.ripples.push({ x: x, y: y, t: v.t }); v.kick(0.2); },
-      draw: function (ctx, v, t, dt) {
-        var W = v.W, H = v.H, F = crop(v, 2, 0, 94, 112);
-        for (i = 0; i < stars.length; i++) {
-          var s = stars[i];
-          ctx.fillStyle = 'rgba(220,214,255,' + (0.18 + 0.18 * Math.sin(t * 1.4 + s.p)) + ')';
-          circle(ctx, s.x * W, s.y * H, 0.4);
-        }
-        ctx.save();
-        ctx.translate(F.x, F.y); ctx.scale(F.s, F.s);
-
-        // the moon
-        var mx = 45, my = 41, mr = 37;
-        var glow = ctx.createRadialGradient(mx, my, mr * 0.9, mx, my, mr * 1.5);
-        glow.addColorStop(0, 'rgba(190,180,240,0.22)'); glow.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = glow; ctx.fillRect(mx - mr * 1.6, my - mr * 1.6, mr * 3.2, mr * 3.2);
-        var mg = ctx.createRadialGradient(mx - mr * 0.3, my - mr * 0.35, mr * 0.1, mx, my, mr);
-        mg.addColorStop(0, c0(DOLL.moonHi)); mg.addColorStop(0.75, '#c4bfda'); mg.addColorStop(1, DOLL.moonLo);
-        ctx.fillStyle = mg; circle(ctx, mx, my, mr);
-        ctx.fillStyle = DOLL.crater;
-        for (i = 0; i < craters.length; i++) {
-          var k = craters[i];
-          circle(ctx, mx + Math.cos(k.a + t * 0.01) * k.d * mr, my + Math.sin(k.a + t * 0.01) * k.d * mr, k.s * mr);
-        }
-        ctx.restore();
-
-        if (t > st.nextField && !A.reduced) {
-          st.ripples.push({ x: F.x + 45 * F.s, y: F.y + 41 * F.s, t: t });
-          st.nextField = t + rand(10, 16);
-        }
-        st.ripples = st.ripples.filter(function (q) { return t - q.t < 1.6; });
-        if (st.ripples.length) hexField(ctx, v, t, st.ripples, '200,186,255');
-
-        blinker(st, t, dt, 2.5, 6.5);
-        ctx.save();
-        ctx.translate(F.x, F.y + Math.sin(t * 1.1) * 0.3 * F.s); ctx.scale(F.s, F.s);
-        // mirror so she faces right, toward the moon, and tilt her face up
-        ctx.translate(96, 0); ctx.scale(-1, 1);
-        ctx.translate(52, 72); ctx.rotate(0.18 + Math.sin(t * 0.4) * 0.015); ctx.translate(-52, -72);
-        ctx.translate(-6, 8);
-        dollFigure(v, ctx, st, t);
-        ctx.restore();
-      }
-    };
-  }
-  function c0(x) { return x; }
-
-  /* ---------- the listener: side profile, headphones, a cable ---------- */
-  var WIRED = {
-    skin: '#3c3c3c', hair: '#171717', hood: '#262626', phones: '#0c0c0c', white: '#5c5c5c',
-    ink: '#ffffff', line: '#9a9a9a', dim: '#4a4a4a'
-  };
-  function profile(p) {
-    return p.C(40.5, 24.5, 37.5, 29, 36.8, 34).C(36.4, 37.5, 36.6, 40, 37.4, 41.8).Q(37.6, 43.2, 36.6, 44.6)
-      .C(35.2, 47, 33.4, 50, 32.2, 52.2).Q(31.6, 53.4, 32.6, 53.9).Q(34, 54.4, 35, 55).Q(35.4, 56.4, 34.9, 57.6)
-      .Q(34.2, 58.4, 34.9, 59.1).Q(35.6, 59.5, 35.2, 60).Q(34.6, 60.7, 35.3, 61.6).Q(36.4, 62.4, 36.2, 63.6)
-      .C(35.8, 65.2, 36.2, 67.6, 38, 68.8).C(42, 70.6, 50, 67.5, 56, 62);
-  }
-  function wiredFigure(v, ctx, st, t) {
-    var c = WIRED, sw = Math.sin(t * 0.9) * 0.35, i;
-
-    // hoodie
-    var hood = P().M(16, 124).C(21, 104, 32, 92, 44, 87.5).Q(52, 86, 59.5, 80).C(65, 71, 78, 69.5, 85, 79)
-      .C(91, 89, 94, 104, 96, 124).Z();
-    hood.cover(v, ctx, c.hood); hood.ink(v, ctx, c.ink);
-    P().M(59.5, 80).Q(70, 75.5, 81, 83).ink(v, ctx, c.line);
-    P().M(65, 83).C(70, 93, 72, 105, 70, 124).ink(v, ctx, c.dim);
-    P().M(35, 95).C(39, 105, 39.5, 114, 38, 124).ink(v, ctx, c.dim);
-    P().M(46.5, 89).Q(45.8 + sw * 0.3, 97, 46 + sw * 0.6, 105).ink(v, ctx, c.line);
-    P().M(46 + sw * 0.6, 106).ink(v, ctx, c.ink, 'o');
-    P().M(50.5, 88).Q(50.8 + sw * 0.3, 95, 51.4 + sw * 0.6, 101.5).ink(v, ctx, c.line);
-    P().M(51.4 + sw * 0.6, 102.5).ink(v, ctx, c.ink, 'o');
-
-    // neck
-    var neck = P().M(41, 67.5).C(42.6, 74, 43.4, 80, 44.2, 88.5).Q(52, 87, 59.8, 80.5).C(60.2, 72, 60, 64, 59.5, 57).Z();
-    neck.cover(v, ctx, c.skin);
-    var ng = ctx.createLinearGradient(0, 66, 0, 78);
-    ng.addColorStop(0, 'rgba(0,0,0,0.6)'); ng.addColorStop(1, 'rgba(0,0,0,0)');
-    neck.fill(ctx, ng);
-    P().M(41.6, 69.4).C(42.8, 75, 43.4, 81, 44.2, 88).ink(v, ctx, c.ink);
-
-    // hair at the back of the head
-    var hb = P().M(41, 24).C(43.5, 15, 54, 11, 63.5, 12.5).C(75, 14.5, 82, 24, 82.5, 36)
-      .C(83, 47, 80.5 + sw, 56, 77 + sw, 63.5).L(74.6 + sw, 59).L(72.8 + sw, 65).L(69.6 + sw, 59.5)
-      .L(66.8 + sw, 65.5).L(63.4, 58).L(58, 46).L(48, 33).Z();
-    hb.cover(v, ctx, c.hair);
-    for (i = 0; i < 4; i++) {
-      P().M(56 + i * 5, 14 + i * 0.8).C(66 + i * 3, 22, 73 + i * 1.6, 38, 71 + i * 2.2 + sw, 58 + i).ink(v, ctx, c.line);
-    }
-    hb.ink(v, ctx, c.ink);
-
-    // face
-    var face = profile(P().M(44, 22)).L(61, 56).L(66, 30).L(56, 20).Z();
-    face.cover(v, ctx, c.skin);
-    oval(41.5, 54.5, 3.6, 1.6).Z().fill(ctx, '#484848');
-    profile(P().M(44, 22)).ink(v, ctx, c.ink);
-
-    // eye (half-lidded), brow, mouth
-    var open = 1 - st.blink, lid = lerp(47.6, 44.6 - st.wide * 0.8, open);
-    if (open > 0.25) {
-      var white = P().M(42.4, 45.6).Q(40.6, lid - 0.8, 38.6, 45.9).Q(40.2, 48.6, 41.8, 48.4).Z();
-      white.cover(v, ctx, c.white);
-      ctx.save(); white.trace(ctx); ctx.clip();
-      ctx.fillStyle = '#d0d0d0'; ctx.beginPath(); ctx.ellipse(40 + st.glance, 47.1, 1.5, 2.2, 0, 0, TAU); ctx.fill();
-      ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(39.8 + st.glance, 47.3, 0.7, 1.1, 0, 0, TAU); ctx.fill();
-      ctx.restore();
-    }
-    P().M(42.6, 45.3).Q(40.6, lid - 1.1, 38.4, 45.7).L(37, 44.4).ink(v, ctx, c.ink);
-    P().M(42.8, 41).Q(40.6, 40.2, 38.4, 41.2).ink(v, ctx, c.line);
-    P().M(35.2, 60.1).L(37, 60.3).ink(v, ctx, c.line);
-
-    // fringe and the tuft in front of the ear
-    var bangs = P().M(57, 17).C(48, 16, 40, 19.5, 36.4, 27.5).Q(34.6, 32.5, 35, 37.6).L(37.8, 33.8)
-      .Q(37.4 + sw * 0.4, 38.6, 38.6 + sw * 0.5, 42.6).L(40.6, 36).Q(41.6, 40.4, 43.6 + sw * 0.4, 43.4)
-      .L(44.6, 35.4).Q(47.4, 38.6, 50.4, 40.6).L(49.6, 32.4).L(57, 31).Z();
-    bangs.cover(v, ctx, c.hair);
-    P().M(53, 19).Q(43, 24, 38.6 + sw * 0.5, 42).ink(v, ctx, c.line);
-    P().M(55, 21).Q(47, 27, 43.6 + sw * 0.4, 43).ink(v, ctx, c.line);
-    bangs.ink(v, ctx, c.ink);
-    var tuft = P().M(52.5, 34).Q(55.2, 46, 54.2 + sw, 58.5).L(56.4, 54).Q(57.6, 45, 57.8, 36).Z();
-    tuft.cover(v, ctx, c.hair); tuft.ink(v, ctx, c.ink);
-
-    // headphones
-    var band = P().M(58.6, 38.5).C(56.8, 28, 57, 19, 59.4, 11.2).L(62.8, 11.6).C(60.8, 19, 60.8, 28, 62.4, 38).Z();
-    band.cover(v, ctx, c.phones); band.ink(v, ctx, c.ink);
-    var cup = oval(62.4, 47.2, 7.4, 9.8, 0.14).Z();
-    cup.cover(v, ctx, c.phones); cup.ink(v, ctx, c.ink);
-    oval(62.6, 47.2, 4.6, 6.6, 0.14).ink(v, ctx, c.line);
-    if (!st.playing || Math.sin(t * 6) > 0) P().M(66.2, 41.5).ink(v, ctx, c.ink, '*');
-
-    // the cable
-    var cs = Math.sin(t * 0.7) * 1.5;
-    P().M(61.4, 56.8).C(59.8 + cs * 0.3, 66, 67 + cs, 74, 64.5 + cs, 88).C(62 + cs, 100, 71 + cs * 0.6, 110, 67, 126)
-      .ink(v, ctx, c.ink);
-  }
-
-  function Wired() {
-    var st = { blink: 0, blinkT: -1, next: 3, glance: 0, glanceT: 0, nextGlance: 4, wide: 0, playing: false };
-    var cables = [], packets = [], r = rng(31);
-    for (var i = 0; i < 4; i++) cables.push({ x: 4 + i * 5 + r() * 3, b: (r() - 0.5) * 8, p: r() * TAU });
-    for (i = 0; i < 26; i++) packets.push({ y: r(), x: r(), s: 4 + r() * 10 });
-    return {
-      state: st,
-      click: function (x, y, v) { st.wide = 1; v.kick(0.7); },
-      draw: function (ctx, v, t, dt) {
-        var W = v.W, H = v.H, F = crop(v, 10, 3, 86, 115);
-        for (var i = 0; i < packets.length; i++) {
-          var k = packets[i], x = ((k.x * W + t * k.s) % (W + 6)) - 3;
-          P().M(x, k.y * H).L(x + 1.5, k.y * H).ink(v, ctx, '#3a3a3a', '-');
-        }
-        ctx.save();
-        ctx.translate(F.x, F.y); ctx.scale(F.s, F.s);
-        for (i = 0; i < cables.length; i++) {
-          var c = cables[i], wob = Math.sin(t * 0.5 + c.p) * 1.2;
-          P().M(c.x, -4).C(c.x + c.b, 30, c.x - c.b + wob, 70, c.x + wob * 0.5, 126).ink(v, ctx, WIRED.dim);
-        }
-        ctx.restore();
-
-        blinker(st, t, dt, 3.5, 8);
-        st.wide = Math.max(0, st.wide - dt * 0.8);
-        if (t > st.nextGlance) { st.glanceT = t + rand(1, 2.5); st.nextGlance = t + rand(5, 10); }
-        st.glance = lerp(st.glance, t < st.glanceT ? -0.7 : 0, ease(6, dt));
-
-        ctx.save();
-        ctx.translate(F.x, F.y + Math.sin(t * 1.0) * 0.3 * F.s);
-        ctx.scale(F.s, F.s);
-        var nod = st.playing ? Math.sin(t * TAU * 0.8) * 0.018 : Math.sin(t * 0.3) * 0.006;
-        ctx.translate(56, 88); ctx.rotate(nod); ctx.translate(-56, -88);
-        wiredFigure(v, ctx, st, t);
-        ctx.restore();
-        if (!A.reduced && Math.random() < dt * 0.15) v.kick(rand(0.2, 0.5));
       }
     };
   }
@@ -892,13 +544,14 @@
    * WIRES - power lines under a white sky
    * ==================================================================== */
   function Wires() {
-    var st = { girl: 0, nextGirl: 5, girlUntil: 0, hum: false };
+    var st = { girl: 0, nextGirl: 5, girlUntil: 0, hum: false, fly: -99 };
+    var crows = [[0.18, 0], [0.26, 1], [0.34, 0], [0.58, 1], [0.66, 0], [0.82, 1]];
     var r = rng(21), bld = [], dots = [];
     for (var i = 0; i < 30; i++) bld.push({ w: 0.025 + r() * 0.06, h: 0.04 + r() * 0.15, roof: r() });
     for (i = 0; i < 90; i++) dots.push({ u: r(), v: r(), s: 0.3 + r() * 0.65, p: r() * TAU });
     return {
       state: st,
-      click: function (x, y, v) { v.kick(0.9); st.girlUntil = v.t + 4; },
+      click: function (x, y, v) { v.kick(0.9); st.girlUntil = v.t + 4; st.fly = v.t; },
       draw: function (ctx, v, t) {
         var W = v.W, H = v.H, hor = H * 0.7;
         var g = ctx.createLinearGradient(0, 0, 0, hor);
@@ -965,6 +618,28 @@
             }
           }
         }
+        // crows on the wire between the first two poles; a tap scares them off
+        var cp0 = poles[0], cp1 = poles[1], since = t - st.fly;
+        for (i = 0; i < crows.length; i++) {
+          var cw = crows[i], lv = cw[1] ? 0.12 : 0.05, s0 = cw[0], u = 1 - s0;
+          var ax = cp0.x - 0.45 * cp0.arm, ay = cp0.top + (cp0.base - cp0.top) * lv;
+          var bx2 = cp1.x - 0.45 * cp1.arm, by2 = cp1.top + (cp1.base - cp1.top) * lv;
+          var sg = Math.abs(bx2 - ax) * 0.07 + 0.6;
+          var mxw = (ax + bx2) / 2, myw = (ay + by2) / 2 + 2 * sg;
+          var wx = u * u * ax + 2 * u * s0 * mxw + s0 * s0 * bx2, wy = u * u * ay + 2 * u * s0 * myw + s0 * s0 * by2;
+          var sc = 1.5 - s0 * 0.5, fx = 0, fy = 0;
+          if (since >= 0 && since < 14) {
+            var fl = since < 7 ? since : 14 - since;
+            fx = -fl * fl * 2.2 * (1 + i * 0.15); fy = -fl * fl * 1.4;
+          }
+          var bob = Math.sin(t * 2 + i * 1.7) * 0.08;
+          ctx.fillStyle = '#000';
+          ctx.beginPath(); ctx.ellipse(wx + fx, wy - 0.9 * sc + bob + fy, 0.95 * sc, 0.62 * sc, 0.2, 0, TAU); ctx.fill();
+          circle(ctx, wx + fx - 0.75 * sc, wy - 1.55 * sc + bob + fy, 0.42 * sc);
+          ctx.beginPath(); ctx.moveTo(wx + fx + 0.7 * sc, wy - 0.8 * sc + fy); ctx.lineTo(wx + fx + 1.9 * sc, wy - 0.2 * sc + fy);
+          ctx.lineTo(wx + fx + 1.6 * sc, wy - 1.0 * sc + fy); ctx.fill();
+        }
+
         ctx.fillStyle = '#050505';
         for (k = poles.length - 1; k >= 0; k--) {
           var p = poles[k], ph = p.base - p.top;
@@ -1084,6 +759,13 @@
           }
         }
         if (lit !== st.lit) { st.lit = lit; if (onLights) onLights(lit); }
+        for (f = 1; f < B.floors; f++) {
+          for (c = 0; c < B.cols; c += 3) {
+            var bxx = B.x0 + c * B.cw + B.cw * 0.08, byy = B.y0 + f * B.fh + B.fh * 0.8;
+            ctx.fillStyle = '#4a4d57'; ctx.fillRect(bxx, byy, B.cw * 0.84, B.fh * 0.16);
+            ctx.fillStyle = 'rgba(225,230,238,0.9)'; ctx.fillRect(bxx, byy - B.fh * 0.04, B.cw * 0.84, B.fh * 0.05);
+          }
+        }
 
         // porch lights
         for (var e = 0; e < 3; e++) {
@@ -1154,5 +836,5 @@
     };
   }
 
-  global.SCENES = { Eye: Eye, Bloom: Bloom, Moon: Moon, Doll: Doll, Wired: Wired, Wires: Wires, Snow: Snow };
+  global.SCENES = { Eye: Eye, Bloom: Bloom, Moon: Moon, Wires: Wires, Snow: Snow };
 })(window);

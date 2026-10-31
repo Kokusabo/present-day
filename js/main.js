@@ -29,7 +29,7 @@
     ['memory test 65536K', 'ok'],
     ['detecting eyes', '2 found'],
     ['detecting flowers', 'blooming'],
-    ['mounting /dev/doll', 'not a doll'],
+    ['mounting /dev/moon', 'one side only'],
     ['mounting /dev/wired', 'everywhere'],
     ['checking heartbeat', 'faint'],
     ['loading layer:01', 'weird'],
@@ -233,38 +233,45 @@
     var lightsEl = $('#lights');
     scenes.eye = S.Eye();
     views.eye = new A.AsciiView($('#cv-eye'), scenes.eye, {
-      mode: 'color', cols: 150, colsNarrow: 92, maxFont: 11, heightRatio: 0.5, heightRatioNarrow: 0.82,
-      lumMix: 0.5, edges: true, edgeThresh: 0.34, jitter: 0.04, fps: 30
+      mode: 'color', cols: 200, colsNarrow: 112, maxFont: 10, heightRatio: 0.48, heightRatioNarrow: 0.8,
+      lumMix: 0.5, edges: true, edgeThresh: 0.34, jitter: 0.03, fps: 30
     });
     scenes.bloom = S.Bloom();
     views.bloom = new A.AsciiView($('#cv-bloom'), scenes.bloom, {
-      mode: 'color', cols: 120, colsNarrow: 86, heightRatio: 1.0, ramp: A.RAMPS.flora, lumMix: 0.7,
-      edges: true, edgeThresh: 0.22, jitter: 0.03, fps: 24
-    });
-    scenes.doll = S.Doll();
-    views.doll = new A.AsciiView($('#cv-doll'), scenes.doll, {
-      mode: 'color', cols: 112, colsNarrow: 96, heightRatio: 1.15, heightRatioNarrow: 1.2,
-      ramp: A.RAMPS.classic, fillDim: 0.3, jitter: 0.03, fps: 24
+      mode: 'color', cols: 150, colsNarrow: 108, heightRatio: 1.0, lumMix: 0.8, gamma: 0.8,
+      edges: true, edgeThresh: 0.22, jitter: 0.02, fps: 24
     });
     scenes.moon = S.Moon();
+    scenes.moon.state.phase = moonNow().phase;
     views.moon = new A.AsciiView($('#cv-moon'), scenes.moon, {
-      mode: 'color', cols: 92, colsNarrow: 72, heightRatio: 0.62, ramp: A.RAMPS.soft, fps: 20
-    });
-    scenes.wired = S.Wired();
-    views.wired = new A.AsciiView($('#cv-wired'), scenes.wired, {
-      mode: 'mono', gradient: [[0, '#5fbfa0'], [1, '#2a7a62']], inkTint: '#c8fff0',
-      cols: 100, colsNarrow: 96, heightRatio: 1.3, ramp: A.RAMPS.portrait, jitter: 0, fps: 20
+      mode: 'color', cols: 150, colsNarrow: 108, heightRatio: 0.72, heightRatioNarrow: 0.9,
+      ss: 1, gamma: 0.8, jitter: 0.015, fps: 20
     });
     scenes.wires = S.Wires();
     views.wires = new A.AsciiView($('#cv-lines'), scenes.wires, {
-      mode: 'color', cols: 132, colsNarrow: 86, heightRatio: 0.66, heightRatioNarrow: 0.9,
-      ramp: A.RAMPS.soft, edges: true, edgeThresh: 0.16, fps: 24
+      mode: 'color', cols: 210, colsNarrow: 112, heightRatio: 0.5, heightRatioNarrow: 0.9,
+      gamma: 1.6, edges: true, edgeThresh: 0.16, jitter: 0.02, fps: 24
     });
     scenes.snow = S.Snow(function (n) { lightsEl.textContent = n; });
     views.snow = new A.AsciiView($('#cv-snow'), scenes.snow, {
-      mode: 'color', cols: 176, colsNarrow: 98, heightRatio: 0.5, heightRatioNarrow: 0.95, ramp: A.RAMPS.snow, fps: 24
+      mode: 'color', cols: 220, colsNarrow: 116, heightRatio: 0.5, heightRatioNarrow: 0.95, gamma: 1.4, jitter: 0.02, fps: 24
     });
     A.start();
+  }
+  // the real moon, roughly: phase from a known new moon, distance from the mean anomaly
+  function moonNow() {
+    var SYN = 29.530588853, now = Date.now();
+    var days = (now - Date.UTC(2000, 0, 6, 18, 14)) / 864e5;
+    var phase = ((days % SYN) + SYN) % SYN / SYN;
+    var lit = (1 - Math.cos(phase * Math.PI * 2)) / 2;
+    var dJ = (now - Date.UTC(2000, 0, 1, 12)) / 864e5;
+    var M = (134.963 + 13.064993 * dJ) * Math.PI / 180;
+    var dist = 385001 - 20905 * Math.cos(M);
+    var names = [[0.03, 'new'], [0.22, 'waxing crescent'], [0.28, 'first quarter'], [0.47, 'waxing gibbous'],
+      [0.53, 'full'], [0.72, 'waning gibbous'], [0.78, 'last quarter'], [0.97, 'waning crescent'], [1.01, 'new']];
+    var name = 'new';
+    for (var i = 0; i < names.length; i++) if (phase < names[i][0]) { name = names[i][1]; break; }
+    return { phase: phase, lit: lit, dist: dist, name: name };
   }
   function whenFonts(cb) {
     var done = false;
@@ -276,6 +283,7 @@
       setTimeout(go, 2500);
       // if the font arrives late, measure again so the columns line up
       document.fonts.addEventListener && document.fonts.addEventListener('loadingdone', function () {
+        A.clearRamps();
         A.views.forEach(function (v) { v.resize(); });
       });
     } else go();
@@ -295,11 +303,19 @@
       status.textContent = st.watched ? 'watching you' : st.blink > 0.4 ? 'blinking' : 'waiting';
     }, 150);
 
-    var bpm = $('#bpm'), temp = $('#temp'), still = $('#still');
+    var still = $('#still');
     $('#garden-day').textContent = daysSince(1998, 7, 6).toLocaleString('en-US');
+    function moonText() {
+      var m = moonNow();
+      $('#moon-name').textContent = m.name;
+      $('#moon-lit').textContent = Math.round(m.lit * 100) + '%';
+      $('#moon-dist').textContent = Math.round(m.dist).toLocaleString('en-US') + ' km';
+      $('#moon-delay').textContent = (m.dist / 299792.458).toFixed(2) + ' s';
+      if (scenes.moon) scenes.moon.state.phase = m.phase;
+    }
+    moonText();
+    setInterval(moonText, 60000);
     setInterval(function () {
-      bpm.textContent = Math.round(rand(57, 64)) + ' bpm';
-      temp.textContent = (35 + rand(0, 0.3)).toFixed(1) + ' \u00b0C';
       still.textContent = Math.max(0, Math.round((performance.now() - (A.Pointer.last || 0)) / 1000)) + ' s';
     }, 1000);
 
@@ -312,7 +328,7 @@
       function () { return 'net: packet from nobody'; },
       function () { return 'mem: 0x' + ((Math.random() * 0xffffff) | 0).toString(16) + ' ok'; },
       function () { return 'who: 1 watcher'; },
-      function () { return 'doll: still'; },
+      function () { return 'moon: ' + moonNow().name; },
       function () { return 'wired: present'; },
       function () { return scenes.eye.state.watched ? 'eye: blink held (watched)' : 'eye: blink allowed'; },
       function () { return 'bloom: petal ' + ((Math.random() * 999) | 0) + ' fell'; },
@@ -419,17 +435,17 @@
     var FILES = {
       'eye_01.raw': ['     .-~~~~-.', "   .'  .--.  '.", '  (   ( () )   )', "   '.  '--'  .'", "     '-....-'", '(it is still looking at you.)'],
       'higanbana.txt': ['the leaves and the flowers never meet.', 'that is the whole story.'],
-      'doll_07.bmp': ['binary file.', 'she says she was made, not born.', 'she says it does not matter.'],
+      'moon.raw': ['binary file.', 'it only ever shows you one side.'],
       'layer_07.log': ['[03:12:07] you said you were here.', "[03:12:08] you weren't.", '[03:12:09] we waited anyway.'],
       'heaven.box': ['[ ] < heaven!', 'there is a box at the end of the page. check it.']
     };
     function scrollTo(id) { var el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }); }
     var CMDS = {
       help: function () {
-        return ['ls          cat <file>   whoami', 'connect     date         echo <text>', 'doll        listen       moon',
-          'bloom       hum          play', 'heaven      clear        exit'];
+        return ['ls          cat <file>   whoami', 'connect     date         echo <text>', 'listen      moon         bloom',
+          'hum         play         heaven', 'clear       exit'];
       },
-      ls: function () { return ['eye_01.raw   higanbana.txt   doll_07.bmp', 'layer_07.log   heaven.box   you.txt']; },
+      ls: function () { return ['eye_01.raw   higanbana.txt   moon.raw', 'layer_07.log   heaven.box   you.txt']; },
       cat: function (arg) {
         if (!arg) return { err: ['cat: what?'] };
         if (arg === 'you.txt') return { err: ['cat: you.txt: permission denied.', 'you are not readable.'] };
@@ -446,13 +462,14 @@
         return [];
       },
       echo: function (arg) { return [(arg || '').split('').reverse().join('') || '...']; },
-      doll: function () { setTimeout(function () { scrollTo('doll'); }, 700); return ['i am not a doll.']; },
-      listen: function () { api.player.play(); return ['she turns the volume up.']; },
+      listen: function () { api.player.play(); return ['turning the volume up.']; },
       love: function () { return { err: ['love: connection refused.'] }; },
       moon: function () {
         if (!scenes.moon) return [];
         scenes.moon.state.blood = !scenes.moon.state.blood;
-        return [scenes.moon.state.blood ? 'the moon is red now.' : 'the moon is white again.'];
+        setTimeout(function () { scrollTo('moon'); }, 600);
+        var m = moonNow();
+        return [m.name + ', ' + Math.round(m.lit * 100) + '% lit.', scenes.moon.state.blood ? 'and red now.' : 'and white again.'];
       },
       bloom: function () {
         if (scenes.bloom) scenes.bloom.scatter();
@@ -529,7 +546,6 @@
       setTimeout(function () {
         if (Sound.play(T[idx])) {
           playing = true;
-          if (scenes.wired) scenes.wired.state.playing = true;
           start = performance.now() - elapsed * 1000;
           playBtn.textContent = '||';
           playBtn.setAttribute('aria-label', 'Pause');
@@ -540,7 +556,6 @@
     function pause() {
       Sound.stop();
       playing = false;
-      if (scenes.wired) scenes.wired.state.playing = false;
       playBtn.textContent = '>';
       playBtn.setAttribute('aria-label', 'Play');
       status.textContent = 'paused';
@@ -675,7 +690,7 @@
   function hexdump() {
     var el = $('#hexdump');
     var msg = 'close the world. open the next. present day, present time. no matter where you are, everyone is ' +
-      'always connected. i am not a doll. flowers for no one. the leaves and the flowers never meet. ' +
+      'always connected. the moon only shows one side. flowers for no one. the leaves and the flowers never meet. ' +
       '9 floors, nobody is awake. heaven!';
     var per = 0;
     function build() {

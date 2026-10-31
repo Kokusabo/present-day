@@ -26,6 +26,40 @@
   };
   var GLITCH = '#$%&?!<>/\\|01{}[]=+*^~';
 
+  /* pick characters by how much ink they really put on screen in this font */
+  var rampCache = {};
+  var CANDIDATES = " .'`,:;~\"!^*+=<>ivxrclzunosaeyftjJLTYCUOQ0Z?mwqpdbkhXKAVNSGEHRD#%&8BM@$";
+  function autoRamp(weight, family) {
+    var key = weight + ' ' + family;
+    if (rampCache[key]) return rampCache[key];
+    var size = 40, c = document.createElement('canvas');
+    c.width = size; c.height = Math.round(size * 1.3);
+    var x = c.getContext('2d', { willReadFrequently: true });
+    x.font = weight + ' ' + size + 'px ' + family;
+    x.textBaseline = 'middle';
+    var list = [];
+    for (var i = 0; i < CANDIDATES.length; i++) {
+      x.clearRect(0, 0, c.width, c.height);
+      x.fillStyle = '#fff';
+      x.fillText(CANDIDATES[i], 4, c.height / 2);
+      var d = x.getImageData(0, 0, c.width, c.height).data, sum = 0;
+      for (var j = 3; j < d.length; j += 4) sum += d[j];
+      list.push([CANDIDATES[i], sum]);
+    }
+    list.sort(function (a, b) { return a[1] - b[1]; });
+    var max = list[list.length - 1][1] || 1, out = ' ', levels = 30;
+    for (var k = 1; k < levels; k++) {
+      var target = k / (levels - 1) * max, best = '', bd = 1e18;
+      for (var m = 1; m < list.length; m++) {
+        var dd = Math.abs(list[m][1] - target);
+        if (dd < bd) { bd = dd; best = list[m][0]; }
+      }
+      if (out.indexOf(best) < 0) out += best;
+    }
+    rampCache[key] = out;
+    return out;
+  }
+
   var reduced = false;
   try { reduced = global.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { /* old browsers */ }
 
@@ -42,12 +76,13 @@
   var DEFAULTS = {
     cols: 120,            // wanted columns on wide screens
     colsNarrow: 0,        // wanted columns below 560px (0 = same as cols)
-    minFont: 6,
+    minFont: 5,
     maxFont: 13,
     lineHeight: 1.16,
     heightRatio: 0.6,     // canvas height / width (css px)
     heightRatioNarrow: 0,
-    ramp: RAMPS.classic,
+    ramp: 'auto',         // 'auto' = characters picked by measured ink coverage of the font
+    ss: 2,                // supersampling: source pixels per cell side
     mode: 'mono',         // 'mono' or 'color'
     tint: '#e6e1d8',
     gradient: null,       // [[stop, color], ...] vertical gradient for mono mode
@@ -133,6 +168,8 @@
     var cssH = Math.round(rows * ch);
     var dpr = Math.min(2, global.devicePixelRatio || 1);
 
+    this.ramp = o.ramp === 'auto' ? autoRamp(o.weight, o.family) : o.ramp;
+    this.ss = Math.max(1, o.ss | 0);
     this.fs = fs; this.cellW = cw; this.cellH = ch;
     this.cols = cols; this.rows = rows;
     this.cssW = cssW; this.cssH = cssH; this.dpr = dpr;
@@ -143,10 +180,14 @@
     this.canvas.style.height = cssH + 'px';
     this.canvas.width = Math.round(cssW * dpr);
     this.canvas.height = Math.round(cssH * dpr);
-    this.src.width = cols; this.src.height = rows;
+    this.sw = cols * this.ss; this.sh = rows * this.ss;
+    this.src.width = this.sw; this.src.height = this.sh;
     this.col.width = cols; this.col.height = rows;
     this.colImg = this.cctx.createImageData(cols, rows);
     this.L = new Float32Array(cols * rows);
+    this.cR = new Float32Array(cols * rows);
+    this.cG = new Float32Array(cols * rows);
+    this.cB = new Float32Array(cols * rows);
     this.inkC = new Uint8Array(cols * rows);
     this.inkRGB = new Uint8Array(cols * rows * 3);
     this.inkHi = new Uint8Array(cols * rows);
@@ -196,26 +237,36 @@
     s.globalAlpha = 1;
     s.globalCompositeOperation = 'source-over';
     s.fillStyle = '#000';
-    s.fillRect(0, 0, cols, rows);
-    s.setTransform(1, 0, 0, 1 / this.aspect, 0, 0);
+    s.fillRect(0, 0, this.sw, this.sh);
+    var ss = this.ss;
+    s.setTransform(ss, 0, 0, ss / this.aspect, 0, 0);
     s.lineCap = 'round';
     s.lineJoin = 'round';
     this.inkC.fill(0);
     this.scene.draw(s, this, this.t, this.dt);
 
-    var data = s.getImageData(0, 0, cols, rows).data;
-    var L = this.L, n = cols * rows, inv = this.invert, mix = o.lumMix;
-    for (var i = 0, j = 0; i < n; i++, j += 4) {
-      var r0 = data[j], g0 = data[j + 1], b0 = data[j + 2];
-      var l = (0.2126 * r0 + 0.7152 * g0 + 0.0722 * b0) / 255;
-      if (mix) {
-        var mx = r0 > g0 ? (r0 > b0 ? r0 : b0) : (g0 > b0 ? g0 : b0);
-        l = l + (mx / 255 - l) * mix;
+    var sw = this.sw, data = s.getImageData(0, 0, sw, this.sh).data;
+    var L = this.L, cR = this.cR, cG = this.cG, cB = this.cB, inv = this.invert, mix = o.lumMix;
+    var area = 1 / (ss * ss);
+    for (var cy = 0, i = 0; cy < rows; cy++) {
+      for (var cx = 0; cx < cols; cx++, i++) {
+        var r0 = 0, g0 = 0, b0 = 0;
+        for (var sy = 0; sy < ss; sy++) {
+          var j = ((cy * ss + sy) * sw + cx * ss) * 4;
+          for (var sx = 0; sx < ss; sx++, j += 4) { r0 += data[j]; g0 += data[j + 1]; b0 += data[j + 2]; }
+        }
+        r0 *= area; g0 *= area; b0 *= area;
+        cR[i] = r0; cG[i] = g0; cB[i] = b0;
+        var l = (0.2126 * r0 + 0.7152 * g0 + 0.0722 * b0) / 255;
+        if (mix) {
+          var mx = r0 > g0 ? (r0 > b0 ? r0 : b0) : (g0 > b0 ? g0 : b0);
+          l = l + (mx / 255 - l) * mix;
+        }
+        L[i] = inv ? 1 - l : l;
       }
-      L[i] = inv ? 1 - l : l;
     }
 
-    var ramp = o.ramp, rn = ramp.length - 1;
+    var ramp = this.ramp, rn = ramp.length - 1;
     var gamma = o.gamma, jit = o.jitter;
     var color = o.mode === 'color';
     var out = this.colImg.data;
@@ -274,8 +325,7 @@
           if (ic) {
             out[q] = inkRGB[idx * 3]; out[q + 1] = inkRGB[idx * 3 + 1]; out[q + 2] = inkRGB[idx * 3 + 2]; out[q + 3] = 255;
           } else {
-            var p = src * 4;
-            var r = data[p], gg = data[p + 1], bb = data[p + 2];
+            var r = cR[src], gg = cG[src], bb = cB[src];
             var m = r > gg ? (r > bb ? r : bb) : (gg > bb ? gg : bb);
             if (m > 0) { var f = 255 / m; if (fd) f *= fd + (1 - fd) * Math.min(1, L[idx] * 1.6); r *= f; gg *= f; bb *= f; }
             out[q] = r; out[q + 1] = gg; out[q + 2] = bb; out[q + 3] = 255;
@@ -326,7 +376,7 @@
     return v;
   }
   AsciiView.prototype.ink = function (ctx, pts, color, ch) {
-    var m = ctx.getTransform(), cols = this.cols, rows = this.rows, asp = this.aspect;
+    var m = ctx.getTransform(), cols = this.cols, rows = this.rows, asp = this.aspect, k1 = 1 / this.ss;
     var C = this.inkC, RGB = this.inkRGB, HI = this.inkHi;
     var rgb = rgbOf(color || '#ffffff'), hi = Math.max(rgb[0], rgb[1], rgb[2]) >= 150 ? 1 : 0;
     var fixed = ch ? ch.charCodeAt(0) : 0;
@@ -339,7 +389,7 @@
     }
     var px = 0, py = 0;
     for (var k = 0; k < pts.length; k += 2) {
-      var x = m.a * pts[k] + m.c * pts[k + 1] + m.e, y = m.b * pts[k] + m.d * pts[k + 1] + m.f;
+      var x = (m.a * pts[k] + m.c * pts[k + 1] + m.e) * k1, y = (m.b * pts[k] + m.d * pts[k + 1] + m.f) * k1;
       if (k === 0) { if (pts.length === 2) put(x, y, fixed || 46); px = x; py = y; continue; }
       var code = fixed, horiz = false;
       if (!code) {
@@ -360,11 +410,11 @@
     }
   };
   AsciiView.prototype.mask = function (ctx, subs) {
-    var m = ctx.getTransform(), polys = [], x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    var m = ctx.getTransform(), polys = [], x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, k1 = 1 / this.ss;
     for (var s = 0; s < subs.length; s++) {
       var p = subs[s], q = new Float32Array(p.length);
       for (var k = 0; k < p.length; k += 2) {
-        var x = m.a * p[k] + m.c * p[k + 1] + m.e, y = m.b * p[k] + m.d * p[k + 1] + m.f;
+        var x = (m.a * p[k] + m.c * p[k + 1] + m.e) * k1, y = (m.b * p[k] + m.d * p[k + 1] + m.f) * k1;
         q[k] = x; q[k + 1] = y;
         if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
       }
@@ -413,6 +463,7 @@
 
   global.ASCII = {
     AsciiView: AsciiView, RAMPS: RAMPS, Pointer: Pointer, views: views, start: start,
+    clearRamps: function () { rampCache = {}; },
     TAU: TAU, clamp: clamp, lerp: lerp, rand: rand, ease: ease, reduced: reduced
   };
 })(window);

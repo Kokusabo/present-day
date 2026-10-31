@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>present day</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="eyes, flowers, two girls, the wires, snow. an ascii transmission with no sender.">
+<meta name="description" content="an eye, flowers, the moon, the wires, snow. an ascii transmission with no sender.">
 <meta name="theme-color" content="#050507">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,7 +32,7 @@
     <nav class="nav" aria-label="Sections">
       <a href="#see">see</a>
       <a href="#bloom">bloom</a>
-      <a href="#doll">doll</a>
+      <a href="#moon">moon</a>
       <a href="#wired">wired</a>
       <a href="#snow">snow</a>
       <a href="#void">&#8709;</a>
@@ -90,28 +90,24 @@ flowers anyway.</h2>
     </div>
   </section>
 
-  <section class="sec doll" id="doll" aria-labelledby="doll-title">
-    <p class="idx"><span>03</span> doll_07.bmp <span class="peep" aria-hidden="true"></span></p>
-    <div class="doll-grid">
+  <section class="sec moon" id="moon" aria-labelledby="moon-title">
+    <p class="idx"><span>03</span> moon.raw &middot; tonight <span class="peep" aria-hidden="true"></span></p>
+    <div class="moon-grid">
       <figure class="art">
-        <canvas id="cv-doll" class="ascii" role="img" aria-label="A girl's silhouette in profile with a ribbon in her long hair, looking up at a huge ASCII moon."></canvas>
-        <figcaption>tap the moon</figcaption>
+        <canvas id="cv-moon" class="ascii" role="img" aria-label="A large ASCII moon in tonight's real phase, turning slowly."></canvas>
+        <figcaption>this is the moon tonight &middot; tap for an eclipse</figcaption>
       </figure>
-      <div class="doll-text">
-        <p class="card-jp" lang="ja" aria-hidden="true">人形じゃない</p>
-        <h2 class="card" id="doll-title">I am not<br>a doll.</h2>
-        <p class="doll-stats">
-          <span>name <b>none</b></span>
-          <span>joints <b>14</b></span>
-          <span>strings <b>cut</b></span>
-          <span>heartbeat <b id="bpm">61 bpm</b></span>
-          <span>temperature <b id="temp">35.1 &deg;C</b></span>
+      <div class="moon-text">
+        <p class="kanji kanji-moon" aria-hidden="true">月</p>
+        <h2 class="card" id="moon-title">it only ever shows you one side.</h2>
+        <p class="moon-stats">
+          <span>phase <b id="moon-name">&mdash;</b></span>
+          <span>lit <b id="moon-lit">&mdash;</b></span>
+          <span>distance <b id="moon-dist">&mdash;</b></span>
+          <span>light delay <b id="moon-delay">&mdash;</b></span>
           <span>you last moved <b id="still">0 s</b> ago</span>
         </p>
-        <div class="dialog">
-          <p>&mdash; what face should i make now?</p>
-          <p>&mdash; any. it's yours.</p>
-        </div>
+        <blockquote class="lyric"><p>fly me to the moon</p><cite>bart howard</cite></blockquote>
       </div>
     </div>
   </section>
@@ -124,16 +120,10 @@ flowers anyway.</h2>
       <p class="pd" aria-hidden="true"><span id="pd2">PRESENT TIME</span></p>
       <p class="laugh" id="laugh" aria-hidden="true">ahahahahahahahaha</p>
     </div>
-    <div class="wired-grid">
-      <figure class="art">
-        <canvas id="cv-wired" class="ascii" role="img" aria-label="Green ASCII line drawing of a girl in profile wearing large headphones, a cable falling from them."></canvas>
-        <figcaption>she is listening to something you can't hear</figcaption>
-      </figure>
-      <figure class="art">
-        <canvas id="cv-lines" class="ascii" role="img" aria-label="ASCII power lines under a white sky. The shadows have red spots in them."></canvas>
-        <figcaption>the wires hum at 50 hz</figcaption>
-      </figure>
-    </div>
+    <figure class="art">
+      <canvas id="cv-lines" class="ascii" role="img" aria-label="ASCII power lines under a white sky, crows sitting on a wire. The shadows have red spots in them."></canvas>
+      <figcaption>the wires hum at 50 hz &middot; tap to scare the crows</figcaption>
+    </figure>
     <div class="term" id="term">
       <div class="term-out" id="term-out" role="log" aria-live="polite"></div>
       <form class="term-line" id="term-form" autocomplete="off">
@@ -157,12 +147,7 @@ flowers anyway.</h2>
     <p class="idx"><span>06</span> end of transmission</p>
     <h2 class="visually-hidden" id="void-title">end of transmission</h2>
     <div class="void-grid">
-      <figure class="art moon-art">
-        <canvas id="cv-moon" class="ascii" role="img" aria-label="A slowly turning ASCII moon going through its phases."></canvas>
-        <figcaption>fly me to the moon &middot; tap for an eclipse</figcaption>
-      </figure>
-      <div class="void-side">
-        <div class="heaven">
+      <div class="heaven">
           <button class="heaven-box" id="heaven-box" type="button" aria-pressed="false" aria-label="heaven"></button>
           <span class="heaven-arrow" aria-hidden="true">&lt;</span>
           <span class="heaven-word" id="heaven-word">heaven!</span>
@@ -184,7 +169,6 @@ flowers anyway.</h2>
           </div>
           <ol class="wmp-list" id="wmp-list"></ol>
         </div>
-      </div>
     </div>
     <div class="hexwrap"><pre class="hexdump" id="hexdump"></pre></div>
     <div class="closing">
