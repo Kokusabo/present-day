@@ -544,14 +544,14 @@
    * WIRES - power lines under a white sky
    * ==================================================================== */
   function Wires() {
-    var st = { girl: 0, nextGirl: 5, girlUntil: 0, hum: false, fly: -99 };
+    var st = { hum: false, fly: -99 };
     var crows = [[0.18, 0], [0.26, 1], [0.34, 0], [0.58, 1], [0.66, 0], [0.82, 1]];
     var r = rng(21), bld = [], dots = [];
     for (var i = 0; i < 30; i++) bld.push({ w: 0.025 + r() * 0.06, h: 0.04 + r() * 0.15, roof: r() });
     for (i = 0; i < 90; i++) dots.push({ u: r(), v: r(), s: 0.3 + r() * 0.65, p: r() * TAU });
     return {
       state: st,
-      click: function (x, y, v) { v.kick(0.9); st.girlUntil = v.t + 4; st.fly = v.t; },
+      click: function (x, y, v) { v.kick(0.9); st.fly = v.t; },
       draw: function (ctx, v, t) {
         var W = v.W, H = v.H, hor = H * 0.7;
         var g = ctx.createLinearGradient(0, 0, 0, hor);
@@ -654,21 +654,6 @@
           }
         }
 
-        // a girl stands on the road, sometimes
-        if (t > st.nextGirl && t > st.girlUntil + 1) { st.girlUntil = t + rand(3, 6); st.nextGirl = t + rand(10, 22); }
-        var target = t < st.girlUntil ? 1 : 0;
-        st.girl = lerp(st.girl, target, 0.08);
-        if (st.girl > 0.02) {
-          var gx = W * 0.47, gb = H * 0.97, gh = H * 0.24;
-          ctx.globalAlpha = st.girl;
-          ctx.fillStyle = '#000';
-          ctx.beginPath(); ctx.ellipse(gx, gb - gh * 0.87, gh * 0.085, gh * 0.1, 0, 0, TAU); ctx.fill();
-          ctx.beginPath(); ctx.moveTo(gx - gh * 0.1, gb - gh * 0.86); ctx.lineTo(gx - gh * 0.11, gb - gh * 0.75); ctx.lineTo(gx + gh * 0.11, gb - gh * 0.75); ctx.lineTo(gx + gh * 0.1, gb - gh * 0.86); ctx.fill();
-          ctx.beginPath(); ctx.moveTo(gx - gh * 0.1, gb - gh * 0.74); ctx.lineTo(gx - gh * 0.16, gb - gh * 0.36); ctx.lineTo(gx + gh * 0.16, gb - gh * 0.36); ctx.lineTo(gx + gh * 0.1, gb - gh * 0.74); ctx.fill();
-          ctx.fillRect(gx - gh * 0.07, gb - gh * 0.37, gh * 0.04, gh * 0.37);
-          ctx.fillRect(gx + gh * 0.03, gb - gh * 0.37, gh * 0.04, gh * 0.37);
-          ctx.globalAlpha = 1;
-        }
       }
     };
   }
