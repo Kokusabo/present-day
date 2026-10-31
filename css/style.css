@@ -1,4 +1,5 @@
-/* layout: one quiet column with no boxes. pictures sit straight on the void,
+/* palette: bone and greys on black, one red. nothing else.
+   layout: one quiet column with no boxes. pictures sit straight on the void,
    text drifts beside them, and only a small index marks where a part starts.
    one typewriter mono for everything, one heavy serif for the few loud words. */
 :root {
@@ -8,9 +9,9 @@
   --ash: #8d8992;
   --dim: #4f4d57;
   --line: #1b1b22;
-  --phos: #78f0cf;
+  --red-dim: #5a141c;
+  --red-deep: #1a0709;
   --blood: #e3182d;
-  --lilac: #c9bdf5;
   --white: #f4f2ee;
   --ink: #0b0b0d;
 
@@ -43,7 +44,7 @@ body::before {
   background: var(--void);
 }
 ::selection { background: var(--blood); color: var(--white); }
-:focus-visible { outline: 1px dashed var(--phos); outline-offset: 3px; }
+:focus-visible { outline: 1px dashed var(--blood); outline-offset: 3px; }
 a { color: inherit; }
 button { font: inherit; }
 b { font-weight: 700; }
@@ -52,7 +53,7 @@ canvas.ascii { display: block; width: 100%; cursor: crosshair; touch-action: pan
   position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
   clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
-.noscript { padding: 16px; color: var(--phos); }
+.noscript { padding: 16px; color: var(--bone); }
 
 /* ---------- boot ---------- */
 .boot {
@@ -60,7 +61,7 @@ canvas.ascii { display: block; width: 100%; cursor: crosshair; touch-action: pan
   inset: 0;
   z-index: 100;
   background: var(--void);
-  color: var(--phos);
+  color: var(--bone);
   padding-block: max(20px, env(safe-area-inset-top, 0px)) 20px;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -72,7 +73,7 @@ canvas.ascii { display: block; width: 100%; cursor: crosshair; touch-action: pan
   max-width: 64ch;
   font: 400 clamp(13px, 1.7vw, 17px)/1.4 var(--f-mono);
   white-space: pre-wrap;
-  text-shadow: 0 0 8px rgba(120, 240, 207, 0.4);
+  text-shadow: 0 0 8px rgba(232, 227, 218, 0.25);
 }
 .boot.off { animation: crt-off 0.55s ease-in forwards; }
 .boot.gone { display: none; }
@@ -116,9 +117,9 @@ canvas.ascii { display: block; width: 100%; cursor: crosshair; touch-action: pan
   left: 0;
   top: 0;
   font: 400 13px/1 var(--f-mono);
-  color: var(--phos);
+  color: var(--blood);
   opacity: 0;
-  text-shadow: 0 0 6px rgba(120, 240, 207, 0.6);
+  text-shadow: 0 0 6px rgba(227, 24, 45, 0.6);
 }
 .glitches { position: fixed; inset: 0; pointer-events: none; z-index: 66; overflow: hidden; }
 .glitches span {
@@ -185,7 +186,7 @@ canvas.ascii { display: block; width: 100%; cursor: crosshair; touch-action: pan
   cursor: pointer;
 }
 .hum:hover { color: var(--bone); }
-.hum[aria-pressed="true"] { color: var(--phos); }
+.hum[aria-pressed="true"] { color: var(--blood); }
 .hum[aria-pressed="true"] .hum-state::after { content: " \223F"; }
 
 /* ---------- sections ---------- */
@@ -242,7 +243,7 @@ main {
   color: var(--dim);
 }
 .stats b { font-weight: 400; color: var(--bone); font-variant-numeric: tabular-nums; }
-.stats #eye-status { color: var(--phos); }
+.stats #eye-status { color: var(--blood); }
 
 /* ticker */
 .ticker {
@@ -313,7 +314,7 @@ main {
   font-size: var(--t-xs);
   color: var(--dim);
 }
-.moon-stats b { font-weight: 400; color: var(--lilac); font-variant-numeric: tabular-nums; }
+.moon-stats b { font-weight: 400; color: var(--bone); font-variant-numeric: tabular-nums; }
 
 /* wired */
 .present { position: relative; overflow: clip; padding-block: 0 clamp(12px, 3vw, 28px); }
@@ -323,7 +324,7 @@ main {
   font: 900 var(--t-xl)/0.9 var(--f-serif);
   letter-spacing: -0.02em;
   color: var(--bone);
-  text-shadow: 3px 0 rgba(227, 24, 45, 0.5), -3px 0 rgba(120, 240, 207, 0.35);
+  text-shadow: 3px 0 rgba(227, 24, 45, 0.55), -2px 0 rgba(232, 227, 218, 0.18);
 }
 .pd span.typing::after { content: "_"; animation: caret 0.8s steps(1) infinite; }
 @keyframes caret { 50% { opacity: 0; } }
@@ -355,8 +356,8 @@ main {
   margin: clamp(28px, 4vw, 48px) 0;
   max-width: 760px;
   padding-left: 14px;
-  border-left: 1px solid var(--phos);
-  color: var(--phos);
+  border-left: 1px solid var(--blood);
+  color: var(--bone);
   font-size: 0.9rem;
   line-height: 1.55;
 }
@@ -365,10 +366,9 @@ main {
   overflow-y: auto;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  text-shadow: 0 0 6px rgba(120, 240, 207, 0.25);
 }
 .term-out .echo { color: var(--bone); }
-.term-out .dim { color: #3f8f7b; }
+.term-out .dim { color: var(--dim); }
 .term-out .err { color: var(--blood); }
 .term-line { display: flex; align-items: center; gap: 8px; padding-top: 6px; }
 .term-line label { white-space: nowrap; }
@@ -381,16 +381,16 @@ main {
   outline: 0;
   background: transparent;
   color: var(--bone);
-  caret-color: var(--phos);
+  caret-color: var(--blood);
   font: 400 16px/1.4 var(--f-mono);
 }
-.term-line input:focus-visible { border-bottom-color: var(--phos); }
-.term-line input::placeholder { color: #2c6658; }
+.term-line input:focus-visible { border-bottom-color: var(--blood); }
+.term-line input::placeholder { color: var(--dim); }
 
 /* snow */
 .snow-cap { display: flex; flex-wrap: wrap; gap: 4px 16px; font-style: normal; color: var(--bone); }
 .snow-cap .hint { color: var(--dim); font-style: italic; }
-#lights { color: #ffcf78; }
+#lights { color: var(--blood); }
 
 /* void */
 .void-grid {
@@ -420,8 +420,8 @@ main {
 .heaven-arrow { color: var(--ash); }
 
 .wmp {
-  border: 1px solid #2c6658;
-  background: linear-gradient(#0c1916, #050908);
+  border: 1px solid var(--red-dim);
+  background: linear-gradient(#0e0b0c, #060506);
   font-size: 0.82rem;
   line-height: 1.4;
 }
@@ -429,15 +429,15 @@ main {
   display: flex;
   justify-content: space-between;
   padding: 4px 8px;
-  background: linear-gradient(90deg, #1f5a4c, #0a2620);
-  color: var(--phos);
+  background: linear-gradient(90deg, var(--red-dim), var(--red-deep));
+  color: var(--bone);
 }
 .wmp-screen { position: relative; height: 120px; margin: 8px; overflow: hidden; background: #000; }
 #wmp-vis {
   margin: 0;
   padding: 6px 8px;
   font: 400 10px/11px var(--f-mono);
-  color: var(--phos);
+  color: var(--blood);
   white-space: pre;
 }
 .wmp-q {
@@ -459,25 +459,25 @@ main {
   white-space: nowrap;
   text-overflow: ellipsis;
   background: #000;
-  color: var(--phos);
+  color: var(--blood);
 }
-.wmp-bar { height: 3px; margin: 8px; background: #12312a; }
-.wmp-bar span { display: block; width: 0; height: 100%; background: var(--phos); }
+.wmp-bar { height: 3px; margin: 8px; background: var(--red-deep); }
+.wmp-bar span { display: block; width: 0; height: 100%; background: var(--blood); }
 .wmp-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 0 8px 8px; }
 .wmp-ctl button {
   min-width: 42px;
   min-height: 34px;
   padding: 4px 10px;
-  border: 1px solid #2c6658;
-  background: #0a1512;
-  color: var(--phos);
+  border: 1px solid var(--red-dim);
+  background: #0c0a0b;
+  color: var(--bone);
   font-weight: 700;
   cursor: pointer;
 }
-.wmp-ctl button:hover { background: var(--phos); color: var(--void); }
+.wmp-ctl button:hover { background: var(--blood); color: var(--white); }
 .wmp-time { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--bone); }
 .wmp-status { color: var(--ash); min-width: 7ch; text-align: right; }
-.wmp-list { margin: 0; padding: 8px 10px 12px 34px; border-top: 1px solid #12312a; color: var(--ash); }
+.wmp-list { margin: 0; padding: 8px 10px 12px 34px; border-top: 1px solid var(--red-deep); color: var(--ash); }
 .wmp-list button {
   width: 100%;
   padding: 3px 0;
@@ -492,14 +492,14 @@ main {
   gap: 12px;
 }
 .wmp-list button:hover { color: var(--bone); }
-.wmp-list li.on { color: var(--phos); }
+.wmp-list li.on { color: var(--blood); }
 .wmp-list .len { font-variant-numeric: tabular-nums; }
 
 .hexwrap { margin-top: clamp(40px, 6vw, 72px); overflow-x: auto; }
 .hexdump { margin: 0; font-size: 0.74rem; line-height: 1.55; color: var(--dim); white-space: pre; }
 .hexdump b { font-weight: 400; color: var(--ash); }
 .closing { padding-block: 48px 16px; display: grid; gap: 12px; justify-items: start; }
-.up { color: var(--phos); text-decoration: none; font-size: var(--t-xs); }
+.up { color: var(--bone); text-decoration: none; font-size: var(--t-xs); }
 .up::before { content: "\2191\00a0"; }
 .up:hover { text-decoration: underline; }
 

@@ -229,32 +229,33 @@
   }
 
   /* ---------- the canvases ---------- */
+  var DUO = ['#e8e3da', '#e3182d'];
   function makeViews() {
     var lightsEl = $('#lights');
     scenes.eye = S.Eye();
     views.eye = new A.AsciiView($('#cv-eye'), scenes.eye, {
-      mode: 'color', cols: 200, colsNarrow: 112, maxFont: 10, heightRatio: 0.48, heightRatioNarrow: 0.8,
+      mode: 'color', duo: DUO, cols: 200, colsNarrow: 112, maxFont: 10, heightRatio: 0.48, heightRatioNarrow: 0.8,
       lumMix: 0.5, edges: true, edgeThresh: 0.34, jitter: 0.03, fps: 30
     });
     scenes.bloom = S.Bloom();
     views.bloom = new A.AsciiView($('#cv-bloom'), scenes.bloom, {
-      mode: 'color', cols: 150, colsNarrow: 108, heightRatio: 1.0, lumMix: 0.8, gamma: 0.8,
+      mode: 'color', duo: DUO, cols: 150, colsNarrow: 108, heightRatio: 1.0, lumMix: 0.8, gamma: 0.8,
       edges: true, edgeThresh: 0.22, jitter: 0.02, fps: 24
     });
     scenes.moon = S.Moon();
     scenes.moon.state.phase = moonNow().phase;
     views.moon = new A.AsciiView($('#cv-moon'), scenes.moon, {
-      mode: 'color', cols: 150, colsNarrow: 108, heightRatio: 0.72, heightRatioNarrow: 0.9,
+      mode: 'color', duo: DUO, cols: 150, colsNarrow: 108, heightRatio: 0.72, heightRatioNarrow: 0.9,
       ss: 1, gamma: 0.8, jitter: 0.015, fps: 20
     });
     scenes.wires = S.Wires();
     views.wires = new A.AsciiView($('#cv-lines'), scenes.wires, {
-      mode: 'color', cols: 210, colsNarrow: 112, heightRatio: 0.5, heightRatioNarrow: 0.9,
+      mode: 'color', duo: DUO, cols: 210, colsNarrow: 112, heightRatio: 0.5, heightRatioNarrow: 0.9,
       gamma: 1.6, edges: true, edgeThresh: 0.16, jitter: 0.02, fps: 24
     });
     scenes.snow = S.Snow(function (n) { lightsEl.textContent = n; });
     views.snow = new A.AsciiView($('#cv-snow'), scenes.snow, {
-      mode: 'color', cols: 220, colsNarrow: 116, heightRatio: 0.5, heightRatioNarrow: 0.95, gamma: 1.4, jitter: 0.02, fps: 24
+      mode: 'color', duo: DUO, cols: 220, colsNarrow: 116, heightRatio: 0.5, heightRatioNarrow: 0.95, gamma: 1.4, jitter: 0.02, fps: 24
     });
     A.start();
   }

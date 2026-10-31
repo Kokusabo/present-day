@@ -60,6 +60,7 @@
     return out;
   }
 
+  var RGBC = {};
   var reduced = false;
   try { reduced = global.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { /* old browsers */ }
 
@@ -91,6 +92,7 @@
     gamma: 1,
     lumMix: 0,            // 0 = luma, 1 = brightest channel (lets saturated colours stay dense)
     fillDim: 0,           // colour mode: dim the fill characters so inked lines stand out
+    duo: null,            // colour mode: [base, accent] - every cell becomes a shade of base, or accent where the scene is red
     inkTint: null,        // mono mode: colour for inked lines (drawn in a second pass)
     jitter: 0.02,
     fps: 24,
@@ -169,6 +171,7 @@
     var dpr = Math.min(2, global.devicePixelRatio || 1);
 
     this.ramp = o.ramp === 'auto' ? autoRamp(o.weight, o.family) : o.ramp;
+    this.duo = o.duo ? [rgbOf(o.duo[0]), rgbOf(o.duo[1])] : null;
     this.ss = Math.max(1, o.ss | 0);
     this.fs = fs; this.cellW = cw; this.cellH = ch;
     this.cols = cols; this.rows = rows;
@@ -273,7 +276,7 @@
     var edges = o.edges, thr = o.edgeThresh, asp = this.aspect;
     var g = this.glitch;
     var lines = this.lines;
-    var inkC = this.inkC, inkRGB = this.inkRGB, inkHi = this.inkHi, fd = o.fillDim;
+    var inkC = this.inkC, inkRGB = this.inkRGB, inkHi = this.inkHi, fd = o.fillDim, duo = this.duo;
     var sep = !color && o.inkTint;
     var inkLines = this.inkLines || (this.inkLines = []);
 
@@ -327,8 +330,20 @@
           } else {
             var r = cR[src], gg = cG[src], bb = cB[src];
             var m = r > gg ? (r > bb ? r : bb) : (gg > bb ? gg : bb);
-            if (m > 0) { var f = 255 / m; if (fd) f *= fd + (1 - fd) * Math.min(1, L[idx] * 1.6); r *= f; gg *= f; bb *= f; }
-            out[q] = r; out[q + 1] = gg; out[q + 2] = bb; out[q + 3] = 255;
+            if (duo) {
+              // how red is this cell: red channel above the others, relative to its brightness
+              var red = m > 8 ? (r - (gg > bb ? gg : bb)) / m : 0;
+              var w = red < 0.3 ? 0 : red > 0.6 ? 1 : (red - 0.3) / 0.3;
+              var shade = 0.42 + 0.58 * Math.min(1, L[src] * 1.5);
+              var A0 = duo[0], A1 = duo[1];
+              out[q] = (A0[0] + (A1[0] - A0[0]) * w) * (w ? 1 : shade);
+              out[q + 1] = (A0[1] + (A1[1] - A0[1]) * w) * (w ? 1 : shade);
+              out[q + 2] = (A0[2] + (A1[2] - A0[2]) * w) * (w ? 1 : shade);
+            } else {
+              if (m > 0) { var f = 255 / m; if (fd) f *= fd + (1 - fd) * Math.min(1, L[idx] * 1.6); r *= f; gg *= f; bb *= f; }
+              out[q] = r; out[q + 1] = gg; out[q + 2] = bb;
+            }
+            out[q + 3] = 255;
           }
         }
       }
@@ -365,7 +380,6 @@
    * ink() writes a polyline (in the scene's current transform) straight into
    * character cells, picking / | \ - _ from the direction of each segment.
    * mask() erases ink under a closed shape, so later fills hide earlier lines. */
-  var RGBC = {};
   function rgbOf(c) {
     var v = RGBC[c];
     if (!v) {
