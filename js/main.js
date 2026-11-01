@@ -473,7 +473,7 @@
         return [m.name + ', ' + Math.round(m.lit * 100) + '% lit.', scenes.moon.state.blood ? 'and red now.' : 'and white again.'];
       },
       bloom: function () {
-        if (scenes.bloom) scenes.bloom.scatter();
+        if (scenes.bloom) scenes.bloom.shake(2.5);
         setTimeout(function () { scrollTo('bloom'); }, 600);
         return ['they fall for you.'];
       },
@@ -716,6 +716,80 @@
     window.addEventListener('resize', build);
   }
 
+  /* ---------- shaking the phone shakes the flowers ---------- */
+  function phoneShake() {
+    if (reduced || typeof window.DeviceMotionEvent === 'undefined') return;
+    // iOS asks for permission first; there we keep to swiping across the bouquet
+    if (typeof DeviceMotionEvent.requestPermission === 'function') return;
+    var bloom = $('#bloom'), visible = false, last = null;
+    onView(bloom, function (on) { visible = on; }, 0.2);
+    window.addEventListener('devicemotion', function (e) {
+      var a = e.accelerationIncludingGravity;
+      if (!visible || !a || a.x === null || !scenes.bloom) return;
+      if (last) {
+        var jerk = Math.abs(a.x - last.x) + Math.abs(a.y - last.y) + Math.abs(a.z - last.z);
+        if (jerk > 14) scenes.bloom.shake(Math.min(1, (jerk - 14) / 20));
+      }
+      last = { x: a.x, y: a.y, z: a.z };
+    }, { passive: true });
+  }
+
+  /* ---------- write to me ---------- */
+  var NAME_A = ['ghost', 'moth', 'static', 'nobody', 'lily', 'wire', 'snow', 'moon', 'signal', 'dust', 'echo', 'glass', 'ash', 'petal', 'crow'];
+  var NAME_B = ['', '_', '.', '-'];
+  function madeUpName() {
+    var n = NAME_A[(Math.random() * NAME_A.length) | 0];
+    return n + NAME_B[(Math.random() * NAME_B.length) | 0] + pad((Math.random() * 1000) | 0, 3);
+  }
+  function messages() {
+    var form = $('#msg'), name = $('#msg-name'), text = $('#msg-text'), count = $('#msg-count');
+    var status = $('#msg-status'), send = $('#msg-send'), trap = form.querySelector('.hp input');
+    var key = (form.getAttribute('data-key') || '').trim();
+    var MAX = 400, WAIT = 60000;
+    name.placeholder = madeUpName();
+    function say(t, cls) { status.textContent = t; status.className = 'msg-status' + (cls ? ' ' + cls : ''); }
+    function counter() { count.textContent = text.value.length + ' / ' + MAX; }
+    text.addEventListener('input', counter);
+    counter();
+    $('#msg-dice').addEventListener('click', function () { name.value = madeUpName(); name.focus(); });
+    if (!key) say('the line is not connected yet. come back later.', 'off');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (trap && trap.checked) return;
+      var who = name.value.replace(/\s+/g, ' ').trim().slice(0, 32) || name.placeholder;
+      var body = text.value.trim().slice(0, MAX);
+      if (body.length < 2) { say('say at least a word.', 'err'); text.focus(); return; }
+      if (!key) { say('the line is not connected yet. your words are still here, nothing was sent.', 'off'); return; }
+      var last = 0;
+      try { last = +localStorage.getItem('pd-last-msg') || 0; } catch (err) { /* storage blocked */ }
+      if (Date.now() - last < WAIT) { say('wait a minute before the next one.', 'err'); return; }
+      send.disabled = true;
+      say('transmitting...');
+      fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          access_key: key,
+          subject: 'present day: a message from ' + who,
+          from_name: who,
+          name: who,
+          message: body,
+          botcheck: false
+        })
+      }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return r.ok && j.success; }); })
+        .then(function (ok) {
+          if (!ok) throw new Error('rejected');
+          try { localStorage.setItem('pd-last-msg', String(Date.now())); } catch (err) { /* storage blocked */ }
+          text.value = '';
+          counter();
+          say('received. there will be no reply.', 'ok');
+          A.views.forEach(function (v) { if (v.visible) v.kick(0.5); });
+        })
+        .catch(function () { say('the signal did not get through. try again later.', 'err'); })
+        .then(function () { send.disabled = false; });
+    });
+  }
+
   /* ---------- small things ---------- */
   function ticker() {
     var track = $('#ticker');
@@ -754,6 +828,8 @@
   bursts();
   navActive();
   tabTitle();
+  phoneShake();
+  messages();
   var hum = humToggle();
   var pd = presentDay();
   var heavenGo = heaven();

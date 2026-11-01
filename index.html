@@ -6,7 +6,7 @@
 <title>present day</title>
 <meta name="description" content="an eye, flowers, the moon, the wires, snow. an ascii transmission with no sender.">
 <meta name="theme-color" content="#050507">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src https://api.web3forms.com; media-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="fonts/fonts.css">
@@ -35,6 +35,7 @@
       <a href="#moon">moon</a>
       <a href="#wired">wired</a>
       <a href="#snow">snow</a>
+      <a href="#write">write</a>
       <a href="#void">&#8709;</a>
     </nav>
     <time class="clock" id="clock">--:--:--</time>
@@ -77,7 +78,7 @@
     <div class="bloom-grid">
       <figure class="art">
         <canvas id="cv-bloom" class="ascii" role="img" aria-label="An ASCII bouquet of lilies and red spider lilies, swaying. Petals fall."></canvas>
-        <figcaption>tap to let them fall</figcaption>
+        <figcaption>shake them</figcaption>
       </figure>
       <div class="bloom-text">
         <p class="kanji" aria-hidden="true">花</p>
@@ -143,8 +144,36 @@ flowers anyway.</h2>
     </figure>
   </section>
 
+  <section class="sec write" id="write" aria-labelledby="write-title">
+    <p class="idx"><span>06</span> new_message.txt <span class="peep" aria-hidden="true"></span></p>
+    <div class="write-grid">
+      <div class="write-text">
+        <h2 class="card" id="write-title">say something.</h2>
+        <p class="note">a few words for whoever keeps this place. make up a name. no email, no account, no reply.</p>
+      </div>
+      <form class="msg" id="msg" novalidate data-key="">
+        <div class="msg-title"><span>new message</span><span aria-hidden="true">_ &#9633; &times;</span></div>
+        <div class="msg-body">
+          <label for="msg-name">name <span>make one up</span></label>
+          <div class="msg-row">
+            <input id="msg-name" name="name" type="text" maxlength="32" autocomplete="off" autocapitalize="off" spellcheck="false">
+            <button type="button" id="msg-dice">roll</button>
+          </div>
+          <label for="msg-text">message</label>
+          <textarea id="msg-text" name="message" maxlength="400" rows="5" placeholder="..."></textarea>
+          <div class="hp" aria-hidden="true"><input type="checkbox" name="botcheck" id="msg-botcheck" tabindex="-1" autocomplete="off"></div>
+          <div class="msg-foot">
+            <span class="msg-count" id="msg-count">0 / 400</span>
+            <button type="submit" id="msg-send">transmit</button>
+          </div>
+          <p class="msg-status" id="msg-status" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+    </div>
+  </section>
+
   <section class="sec void" id="void" aria-labelledby="void-title">
-    <p class="idx"><span>06</span> end of transmission</p>
+    <p class="idx"><span>07</span> end of transmission</p>
     <h2 class="visually-hidden" id="void-title">end of transmission</h2>
     <div class="void-grid">
       <div class="heaven">

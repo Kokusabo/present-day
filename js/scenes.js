@@ -224,7 +224,9 @@
   };
 
   function Bloom() {
-    var flowers = [], petals = [], motes = [], wind = 0, lastPx = null, F = null;
+    var flowers = [], petals = [], motes = [], wind = 0, lastPx = null, lastPy = null, lastDir = 0, F = null;
+    // shake: grows while the pointer swings back and forth over the bouquet, fades on its own
+    var shake = 0, shakeX = 50, shakeY = 50, phoneShake = 0;
     var LEAVES = [[-1, 30, 60, 0], [1, 34, 58, 0.6], [-1, 42, 74, 1.3], [1, 40, 72, 2], [-1, 20, 80, 2.7], [1, 22, 79, 3.1]];
 
     function lily(ctx, f, t) {
@@ -325,17 +327,15 @@
       ctx.beginPath(); ctx.moveTo(0, s * 0.3); ctx.quadraticCurveTo(s * 0.08, -s * 0.4, 0, -s * 0.95); ctx.stroke();
       ctx.restore();
     }
-    function spawnPetal(x, y, pal) {
+    function spawnPetal(x, y, pal, push) {
       var c = pal ? PAL[pal][Math.random() < 0.5 ? 1 : 2] : (Math.random() < 0.5 ? '#e0142e' : '#ff5566');
-      petals.push({ x: x, y: y, vx: rand(-1, 1), vy: rand(-2, 0.5), a: rand(TAU), va: rand(-3, 3), s: rand(0.8, 1.6), c: c });
+      petals.push({ x: x, y: y, vx: rand(-1, 1) + (push || 0), vy: rand(-1.5, 0.5), a: rand(TAU), va: rand(-3, 3), s: rand(0.8, 1.6), c: c });
     }
 
     return {
-      scatter: function () {
-        for (var i = 0; i < flowers.length; i++) {
-          for (var j = 0; j < 4; j++) spawnPetal(flowers[i].hx || flowers[i].x, flowers[i].hy || flowers[i].y, flowers[i].pal);
-        }
-      },
+      // a shake from outside the canvas (the phone itself, or the terminal)
+      shake: function (amount) { phoneShake = Math.min(3, phoneShake + amount); },
+      petalCount: function () { return petals.length; },
       init: function () {
         var r = rng(9);
         flowers = [
@@ -357,17 +357,6 @@
         }
         for (i = 0; i < 70; i++) motes.push({ x: r(), y: r(), p: r() * TAU });
       },
-      click: function (x, y, v) {
-        if (!F) return;
-        var dx = (x - F.x) / F.s, dy = (y - F.y) / F.s, best = flowers[0], bd = 1e9;
-        for (var i = 0; i < flowers.length; i++) {
-          var f = flowers[i], d = (f.hx - dx) * (f.hx - dx) + (f.hy - dy) * (f.hy - dy);
-          if (d < bd) { bd = d; best = f; }
-        }
-        for (i = 0; i < 18; i++) spawnPetal(dx + rand(-3, 3), dy + rand(-3, 3), best.pal);
-        wind += rand(-0.4, 0.4);
-        v.kick(0.15);
-      },
       draw: function (ctx, v, t, dt) {
         var W = v.W, H = v.H;
         F = fit(v, 100, 112, 0.98, 0.5, 0.5);
@@ -378,17 +367,30 @@
         }
         var pxd = (v.px - F.x) / F.s, pyd = (v.py - F.y) / F.s;
         if (v.pointerIn) {
-          if (lastPx !== null) wind += clamp((pxd - lastPx) * 0.03, -0.25, 0.25);
-          lastPx = pxd;
-        } else lastPx = null;
-        wind = clamp(wind * Math.exp(-dt * 1.4), -1.2, 1.2);
+          if (lastPx !== null) {
+            var mvx = pxd - lastPx, mvy = pyd - lastPy, speed = Math.sqrt(mvx * mvx + mvy * mvy);
+            wind += clamp(mvx * 0.035, -0.3, 0.3);
+            // a swing counts more when it changes direction: that is what shaking is
+            var dir = mvx > 0.4 ? 1 : mvx < -0.4 ? -1 : 0;
+            var turn = dir && lastDir && dir !== lastDir ? 0.6 : 0;
+            if (dir) lastDir = dir;
+            shake += Math.min(speed, 12) * 0.028 + turn;
+            shakeX = pxd; shakeY = pyd;
+          }
+          lastPx = pxd; lastPy = pyd;
+        } else { lastPx = null; lastDir = 0; }
+        shake = Math.min(4, shake * Math.exp(-dt * 2.2));
+        phoneShake *= Math.exp(-dt * 1.8);
+        if (phoneShake > 0.05) wind += Math.sin(t * 17) * phoneShake * 0.12;
+        wind = clamp(wind * Math.exp(-dt * 1.4), -1.4, 1.4);
 
         ctx.save();
         ctx.translate(F.x, F.y); ctx.scale(F.s, F.s);
 
         for (i = 0; i < flowers.length; i++) {
           var f = flowers[i];
-          var sway = Math.sin(t * 0.7 + f.ph) * 0.9 + wind * (1.3 - f.y / 112) * 5;
+          var tremble = Math.sin(t * 15 + f.ph * 3) * Math.min(1.6, shake * 0.4 + phoneShake * 0.5);
+          var sway = Math.sin(t * 0.7 + f.ph) * 0.9 + wind * (1.3 - f.y / 112) * 5 + tremble;
           var push = 0;
           if (v.pointerIn) {
             var ddx = f.x - pxd, ddy = f.y - pyd, d2 = ddx * ddx + ddy * ddy;
@@ -442,10 +444,14 @@
           else bud(ctx, f);
         }
 
-        // falling petals
-        if (!A.reduced && Math.random() < dt * 0.7) {
-          f = flowers[(Math.random() * flowers.length) | 0];
-          spawnPetal(f.hx, f.hy, f.pal);
+        // petals only come loose when the flowers are shaken, mostly the ones nearest the hand
+        if (shake > 0.55 || phoneShake > 0.2) {
+          for (i = 0; i < flowers.length; i++) {
+            f = flowers[i];
+            var near = Math.exp(-((f.hx - shakeX) * (f.hx - shakeX) + (f.hy - shakeY) * (f.hy - shakeY)) / 700);
+            var rate = Math.max(0, shake - 0.55) * near * 2.6 + phoneShake * 0.9;
+            if (Math.random() < rate * dt) spawnPetal(f.hx + rand(-2, 2), f.hy + rand(-1.5, 1.5), f.pal, wind * 3);
+          }
         }
         for (i = petals.length - 1; i >= 0; i--) {
           var p = petals[i];
