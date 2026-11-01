@@ -195,7 +195,7 @@
         }
 
         // a tear, now and then, when nobody is looking
-        if (!st.tear && t > st.nextTear && !st.watched && !A.reduced) st.tear = { y: 0, v: 0 };
+        if (!st.tear && t > st.nextTear && !st.watched) st.tear = { y: 0, v: 0 };
         if (st.tear) {
           var base = bez(D, 0.86);
           st.tear.v += dt * eh * 0.6;
@@ -817,7 +817,7 @@
         }
 
         // lights go on and off by themselves
-        if (t > st.next && !A.reduced) {
+        if (t > st.next) {
           st.next = t + rand(0.7, 2.4);
           var win = st.win[(Math.random() * st.win.length) | 0];
           var target = 0.2 + 0.08 * Math.sin(t * 0.05);

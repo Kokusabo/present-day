@@ -129,7 +129,7 @@
     this.cctx = this.col.getContext('2d');
     this.t = 0; this.dt = 1 / 24; this.last = 0;
     this.visible = false; this.dirty = true;
-    this.glitch = 0; this.invert = false;
+    this.glitch = 0; this.invert = false; this.cost = 0; this.fpsCap = 0; this.frames = 0;
     this.px = -1e5; this.py = -1e5; this.pointerIn = false; this.pointerActive = false;
     this.lines = [];
     canvas.__ascii = this;
@@ -208,20 +208,27 @@
   };
 
   AsciiView.prototype.kick = function (amount) {
+    if (reduced) return; // no glitch flashes for people who asked their system for less motion
     this.glitch = Math.max(this.glitch, amount || 0.6);
     this.dirty = true;
   };
 
+  // frames per second this view aims for right now: lower in calm mode, and lower
+  // still when this computer turns out to be slow at drawing it
+  var CALM_FPS = 15;
+  AsciiView.prototype.fps = function () {
+    return Math.min(this.o.fps, this.fpsCap || 99, reduced ? CALM_FPS : 99);
+  };
+  // how overdue this view is, in ms (> 0 means it should draw now)
+  AsciiView.prototype.due = function (now) {
+    return this.dirty ? 1e6 : (now - this.last) - (1000 / this.fps() - 2);
+  };
+
   AsciiView.prototype.tick = function (now) {
-    if (reduced) {
-      if (!this.dirty) return;
-    } else if (!this.dirty && now - this.last < 1000 / this.o.fps - 2) {
-      return;
-    }
-    var dt = this.last ? Math.min(0.1, (now - this.last) / 1000) : 1 / this.o.fps;
+    var dt = this.last ? Math.min(0.1, (now - this.last) / 1000) : 1 / this.fps();
     this.last = now;
     this.dt = dt;
-    if (!reduced) this.t += dt;
+    this.t += dt;
     var r = this.canvas.getBoundingClientRect();
     this.px = (Pointer.x - r.left - this.ox) / this.cellW;
     this.py = (Pointer.y - r.top) / this.cellW;
@@ -229,7 +236,16 @@
     this.pointerIn = this.pointerActive && Pointer.x >= r.left && Pointer.x <= r.right &&
       Pointer.y >= r.top && Pointer.y <= r.bottom;
     this.glitch = Math.max(0, this.glitch - dt * 1.4);
+    var t0 = performance.now();
     this.render();
+    var cost = performance.now() - t0;
+    this.cost = this.cost ? this.cost * 0.9 + cost * 0.1 : cost;
+    // every second or so: draw less often if frames are expensive here, more often once they are cheap again
+    if (++this.frames % 25 === 0) {
+      var cap = this.fpsCap || this.o.fps;
+      if (this.cost > 9) this.fpsCap = Math.max(10, cap - 4);
+      else if (this.cost < 5 && this.fpsCap) this.fpsCap = cap + 2 >= this.o.fps ? 0 : cap + 2;
+    }
     this.dirty = false;
   };
 
@@ -457,10 +473,26 @@
     }
   };
 
+  // Draw the most overdue views first and stop when this frame's time budget is used,
+  // so two pictures on screen take turns instead of both drawing in the same frame.
+  var BUDGET_MS = 6;
+  var dueList = [];
   function frame(now) {
     global.requestAnimationFrame(frame);
     if (document.hidden) return;
-    for (var i = 0; i < views.length; i++) if (views[i].visible) views[i].tick(now);
+    dueList.length = 0;
+    for (var i = 0; i < views.length; i++) {
+      if (!views[i].visible) continue;
+      var d = views[i].due(now);
+      if (d > 0) dueList.push([d, views[i]]);
+    }
+    if (!dueList.length) return;
+    dueList.sort(function (a, b) { return b[0] - a[0]; });
+    var start = performance.now();
+    for (var k = 0; k < dueList.length; k++) {
+      if (k > 0 && performance.now() - start > BUDGET_MS) break;
+      dueList[k][1].tick(now);
+    }
   }
   var running = false;
   function start() {

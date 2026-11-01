@@ -718,7 +718,7 @@
 
   /* ---------- shaking the phone shakes the flowers ---------- */
   function phoneShake() {
-    if (reduced || typeof window.DeviceMotionEvent === 'undefined') return;
+    if (typeof window.DeviceMotionEvent === 'undefined') return;
     // iOS asks for permission first; there we keep to swiping across the bouquet
     if (typeof DeviceMotionEvent.requestPermission === 'function') return;
     var bloom = $('#bloom'), visible = false, last = null;
