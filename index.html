@@ -31,11 +31,11 @@
     <a class="brand" href="#see">present day</a>
     <nav class="nav" aria-label="Sections">
       <a href="#see">see</a>
+      <a href="#write">write</a>
       <a href="#bloom">bloom</a>
       <a href="#moon">moon</a>
       <a href="#wired">wired</a>
       <a href="#snow">snow</a>
-      <a href="#write">write</a>
       <a href="#void">&#8709;</a>
     </nav>
     <time class="clock" id="clock">--:--:--</time>
@@ -59,93 +59,8 @@
     </div>
   </section>
 
-  <div class="ticker" aria-label="Song titles">
-    <div class="ticker-track" id="ticker">
-      <span>duvet <i>bôa</i></span>
-      <span>fly me to the moon <i>bart howard</i></span>
-      <span>komm, süsser tod <i>arianne</i></span>
-      <span>how to disappear completely <i>radiohead</i></span>
-      <span>fade into you <i>mazzy star</i></span>
-      <span>heaven or las vegas <i>cocteau twins</i></span>
-      <span>when the sun hits <i>slowdive</i></span>
-      <span>avril 14th <i>aphex twin</i></span>
-      <span>there is a light that never goes out <i>the smiths</i></span>
-    </div>
-  </div>
-
-  <section class="sec bloom" id="bloom" aria-labelledby="bloom-title">
-    <p class="idx"><span>02</span> higanbana.txt</p>
-    <div class="bloom-grid">
-      <figure class="art">
-        <canvas id="cv-bloom" class="ascii" role="img" aria-label="An ASCII bouquet of lilies and red spider lilies, swaying. Petals fall."></canvas>
-        <figcaption>shake them</figcaption>
-      </figure>
-      <div class="bloom-text">
-        <p class="kanji" aria-hidden="true">花</p>
-        <h2 class="big" id="bloom-title" data-scramble>flowers for no one.
-flowers anyway.</h2>
-        <p class="note">彼岸花. the flower of the other shore. it blooms after its leaves are gone, and the leaves grow back after it dies. they never meet.</p>
-        <p class="facts">water: none &nbsp;/&nbsp; light: monitor, 60 hz &nbsp;/&nbsp; visitors: 0 &nbsp;/&nbsp; day <span id="garden-day">0</span></p>
-        <blockquote class="lyric"><p>everything in its right place</p><cite>radiohead</cite></blockquote>
-      </div>
-    </div>
-  </section>
-
-  <section class="sec moon" id="moon" aria-labelledby="moon-title">
-    <p class="idx"><span>03</span> moon.raw &middot; tonight <span class="peep" aria-hidden="true"></span></p>
-    <div class="moon-grid">
-      <figure class="art">
-        <canvas id="cv-moon" class="ascii" role="img" aria-label="A large ASCII moon in tonight's real phase, turning slowly."></canvas>
-        <figcaption>this is the moon tonight &middot; tap for an eclipse</figcaption>
-      </figure>
-      <div class="moon-text">
-        <p class="kanji kanji-moon" aria-hidden="true">月</p>
-        <h2 class="card" id="moon-title">it only ever shows you one side.</h2>
-        <p class="moon-stats">
-          <span>phase <b id="moon-name">&mdash;</b></span>
-          <span>lit <b id="moon-lit">&mdash;</b></span>
-          <span>distance <b id="moon-dist">&mdash;</b></span>
-          <span>light delay <b id="moon-delay">&mdash;</b></span>
-          <span>you last moved <b id="still">0 s</b> ago</span>
-        </p>
-        <blockquote class="lyric"><p>fly me to the moon</p><cite>bart howard</cite></blockquote>
-      </div>
-    </div>
-  </section>
-
-  <section class="sec wired" id="wired" aria-labelledby="pd-label">
-    <p class="idx"><span>04</span> ch.07 &middot; 50 hz</p>
-    <div class="present" id="present">
-      <h2 class="visually-hidden" id="pd-label">present day. present time.</h2>
-      <p class="pd" aria-hidden="true"><span id="pd1">PRESENT DAY</span></p>
-      <p class="pd" aria-hidden="true"><span id="pd2">PRESENT TIME</span></p>
-      <p class="laugh" id="laugh" aria-hidden="true">ahahahahahahahaha</p>
-    </div>
-    <figure class="art">
-      <canvas id="cv-lines" class="ascii" role="img" aria-label="ASCII power lines under a white sky, crows sitting on a wire. The shadows have red spots in them."></canvas>
-      <figcaption>the wires hum at 50 hz &middot; tap to scare the crows</figcaption>
-    </figure>
-    <div class="term" id="term">
-      <div class="term-out" id="term-out" role="log" aria-live="polite"></div>
-      <form class="term-line" id="term-form" autocomplete="off">
-        <label for="term-in">guest@wired:~$</label>
-        <input id="term-in" name="cmd" type="text" spellcheck="false" autocapitalize="off" autocorrect="off" enterkeyhint="send" placeholder="help">
-      </form>
-    </div>
-    <p class="whisper" data-scramble>wherever you are, everyone is connected</p>
-  </section>
-
-  <section class="sec snow" id="snow" aria-labelledby="snow-title">
-    <p class="idx"><span>05</span> block 9 &middot; &minus;14&deg;c <span class="peep" aria-hidden="true"></span></p>
-    <h2 class="visually-hidden" id="snow-title">snow</h2>
-    <figure class="art">
-      <canvas id="cv-snow" class="ascii" role="img" aria-label="An ASCII apartment block at night in falling snow. Its windows switch on and off."></canvas>
-      <figcaption class="snow-cap"><span>9 floors.</span> <span><b id="lights">0</b> lights.</span> <span>nobody is awake.</span> <span class="hint">tap a window</span></figcaption>
-    </figure>
-  </section>
-
   <section class="sec write" id="write" aria-labelledby="write-title">
-    <p class="idx"><span>06</span> new_message.txt <span class="peep" aria-hidden="true"></span></p>
+    <p class="idx"><span>02</span> new_message.txt <span class="peep" aria-hidden="true"></span></p>
     <div class="write-grid">
       <div class="write-text">
         <h2 class="card" id="write-title">say something.</h2>
@@ -170,6 +85,91 @@ flowers anyway.</h2>
         </div>
       </form>
     </div>
+  </section>
+
+  <div class="ticker" aria-label="Song titles">
+    <div class="ticker-track" id="ticker">
+      <span>duvet <i>bôa</i></span>
+      <span>fly me to the moon <i>bart howard</i></span>
+      <span>komm, süsser tod <i>arianne</i></span>
+      <span>how to disappear completely <i>radiohead</i></span>
+      <span>fade into you <i>mazzy star</i></span>
+      <span>heaven or las vegas <i>cocteau twins</i></span>
+      <span>when the sun hits <i>slowdive</i></span>
+      <span>avril 14th <i>aphex twin</i></span>
+      <span>there is a light that never goes out <i>the smiths</i></span>
+    </div>
+  </div>
+
+  <section class="sec bloom" id="bloom" aria-labelledby="bloom-title">
+    <p class="idx"><span>03</span> higanbana.txt</p>
+    <div class="bloom-grid">
+      <figure class="art">
+        <canvas id="cv-bloom" class="ascii" role="img" aria-label="An ASCII bouquet of lilies and red spider lilies, swaying. Petals fall."></canvas>
+        <figcaption>shake them</figcaption>
+      </figure>
+      <div class="bloom-text">
+        <p class="kanji" aria-hidden="true">花</p>
+        <h2 class="big" id="bloom-title" data-scramble>flowers for no one.
+flowers anyway.</h2>
+        <p class="note">彼岸花. the flower of the other shore. it blooms after its leaves are gone, and the leaves grow back after it dies. they never meet.</p>
+        <p class="facts">water: none &nbsp;/&nbsp; light: monitor, 60 hz &nbsp;/&nbsp; visitors: 0 &nbsp;/&nbsp; day <span id="garden-day">0</span></p>
+        <blockquote class="lyric"><p>everything in its right place</p><cite>radiohead</cite></blockquote>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec moon" id="moon" aria-labelledby="moon-title">
+    <p class="idx"><span>04</span> moon.raw &middot; tonight <span class="peep" aria-hidden="true"></span></p>
+    <div class="moon-grid">
+      <figure class="art">
+        <canvas id="cv-moon" class="ascii" role="img" aria-label="A large ASCII moon in tonight's real phase, turning slowly."></canvas>
+        <figcaption>this is the moon tonight &middot; tap for an eclipse</figcaption>
+      </figure>
+      <div class="moon-text">
+        <p class="kanji kanji-moon" aria-hidden="true">月</p>
+        <h2 class="card" id="moon-title">it only ever shows you one side.</h2>
+        <p class="moon-stats">
+          <span>phase <b id="moon-name">&mdash;</b></span>
+          <span>lit <b id="moon-lit">&mdash;</b></span>
+          <span>distance <b id="moon-dist">&mdash;</b></span>
+          <span>light delay <b id="moon-delay">&mdash;</b></span>
+          <span>you last moved <b id="still">0 s</b> ago</span>
+        </p>
+        <blockquote class="lyric"><p>fly me to the moon</p><cite>bart howard</cite></blockquote>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec wired" id="wired" aria-labelledby="pd-label">
+    <p class="idx"><span>05</span> ch.07 &middot; 50 hz</p>
+    <div class="present" id="present">
+      <h2 class="visually-hidden" id="pd-label">present day. present time.</h2>
+      <p class="pd" aria-hidden="true"><span id="pd1">PRESENT DAY</span></p>
+      <p class="pd" aria-hidden="true"><span id="pd2">PRESENT TIME</span></p>
+      <p class="laugh" id="laugh" aria-hidden="true">ahahahahahahahaha</p>
+    </div>
+    <figure class="art">
+      <canvas id="cv-lines" class="ascii" role="img" aria-label="ASCII power lines under a white sky, crows sitting on a wire. The shadows have red spots in them."></canvas>
+      <figcaption>the wires hum at 50 hz &middot; tap to scare the crows</figcaption>
+    </figure>
+    <div class="term" id="term">
+      <div class="term-out" id="term-out" role="log" aria-live="polite"></div>
+      <form class="term-line" id="term-form" autocomplete="off">
+        <label for="term-in">guest@wired:~$</label>
+        <input id="term-in" name="cmd" type="text" spellcheck="false" autocapitalize="off" autocorrect="off" enterkeyhint="send" placeholder="help">
+      </form>
+    </div>
+    <p class="whisper" data-scramble>wherever you are, everyone is connected</p>
+  </section>
+
+  <section class="sec snow" id="snow" aria-labelledby="snow-title">
+    <p class="idx"><span>06</span> block 9 &middot; &minus;14&deg;c <span class="peep" aria-hidden="true"></span></p>
+    <h2 class="visually-hidden" id="snow-title">snow</h2>
+    <figure class="art">
+      <canvas id="cv-snow" class="ascii" role="img" aria-label="An ASCII apartment block at night in falling snow. Its windows switch on and off."></canvas>
+      <figcaption class="snow-cap"><span>9 floors.</span> <span><b id="lights">0</b> lights.</span> <span>nobody is awake.</span> <span class="hint">tap a window</span></figcaption>
+    </figure>
   </section>
 
   <section class="sec void" id="void" aria-labelledby="void-title">
