@@ -484,12 +484,13 @@
         depth: mare ? 0.3 + r() * 0.14 : 0.4 + r() * 0.4,
         mare: mare
       });
+      cr[i].cosR = Math.cos(cr[i].rad * 1.35);
     }
     for (i = 0; i < 70; i++) stars.push({ x: r(), y: r(), p: r() * TAU, b: 0.25 + r() * 0.6 });
     return {
       state: st,
       click: function (x, y, v) { st.blood = !st.blood; v.kick(0.4); },
-      resize: function (v) { st.img = v.sctx.createImageData(v.sw, v.sh); },
+      resize: function (v) { st.img = v.sctx.createImageData(v.sw, v.sh); st.alb = new Float32Array(v.sw * v.sh); st.albRot = -1; },
       draw: function (ctx, v, t) {
         var img = st.img, d = img.data, sw = v.sw, sh = v.sh, ss = v.ss, asp = v.aspect;
         var cx = v.W / 2, cy = v.H / 2, R = Math.min(v.W, v.H) * 0.42;
@@ -499,7 +500,9 @@
         var ln = Math.sqrt(Lx * Lx + Ly * Ly + Lz * Lz); Lx /= ln; Ly /= ln; Lz /= ln;
         var cR = Math.cos(rot), sR = Math.sin(rot);
         var tint = st.blood ? [255, 52, 40] : [244, 238, 228];
-        var c, o, val;
+        var c, o, val, A2 = st.alb;
+        var relief = Math.abs(rot - st.albRot) > 0.008;
+        if (relief) st.albRot = rot;
         for (var y = 0; y < sh; y++) {
           var dy = ((y + 0.5) / ss * asp - cy) / R;
           for (var x = 0; x < sw; x++) {
@@ -508,20 +511,24 @@
               var nz = Math.sqrt(1 - d2);
               var lam = dx * Lx + dy * Ly + nz * Lz;
               lam = lam < 0 ? 0 : Math.pow(lam, 0.7);
-              var px = dx * cR - nz * sR, pz = dx * sR + nz * cR, py = dy;
-              var alb = 0.82;
-              for (var i = 0; i < cr.length; i++) {
-                c = cr[i];
-                var cd = px * c.x + py * c.y + pz * c.z;
-                if (cd > Math.cos(c.rad * 1.35)) {
-                  var q = Math.acos(cd > 1 ? 1 : cd) / c.rad;
-                  if (c.mare) alb -= c.depth * Math.exp(-q * q * 2);
-                  else {
-                    if (q < 1) alb -= c.depth * (1 - q * q) * 0.7;
-                    alb += 0.2 * Math.exp(-((q - 1) * (q - 1)) / 0.02);
+              var alb;
+              if (relief) {
+                var px = dx * cR - nz * sR, pz = dx * sR + nz * cR, py = dy;
+                alb = 0.82;
+                for (var i = 0; i < cr.length; i++) {
+                  c = cr[i];
+                  var cd = px * c.x + py * c.y + pz * c.z;
+                  if (cd > c.cosR) {
+                    var q = Math.acos(cd > 1 ? 1 : cd) / c.rad;
+                    if (c.mare) alb -= c.depth * Math.exp(-q * q * 2);
+                    else {
+                      if (q < 1) alb -= c.depth * (1 - q * q) * 0.7;
+                      alb += 0.2 * Math.exp(-((q - 1) * (q - 1)) / 0.02);
+                    }
                   }
                 }
-              }
+                A2[y * sw + x] = alb;
+              } else alb = A2[y * sw + x];
               // soft terminator, faint earthshine, darker limb
               val = alb * (0.11 + 0.89 * lam) * (0.78 + 0.22 * nz);
             } else {

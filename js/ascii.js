@@ -95,7 +95,7 @@
     duo: null,            // colour mode: [base, accent] - every cell becomes a shade of base, or accent where the scene is red
     inkTint: null,        // mono mode: colour for inked lines (drawn in a second pass)
     jitter: 0.02,
-    fps: 24,
+    fps: 60,
     weight: 400,
     family: '"Courier Prime", "Courier New", ui-monospace, Menlo, Consolas, monospace'
   };
@@ -236,13 +236,13 @@
 
   // frames per second this view aims for right now: lower in calm mode, and lower
   // still when this computer turns out to be slow at drawing it
-  var CALM_FPS = 15;
   AsciiView.prototype.fps = function () {
-    return Math.min(this.o.fps, this.fpsCap || 99, reduced ? CALM_FPS : 99);
+    return Math.min(this.o.fps, this.fpsCap || 999);
   };
   // how overdue this view is, in ms (> 0 means it should draw now)
   AsciiView.prototype.due = function (now) {
-    return this.dirty ? 1e6 : (now - this.last) - (1000 / this.fps() - 2);
+    // 0.75 of the period: on 120-165 Hz screens this keeps frames evenly spaced instead of skipping
+    return this.dirty ? 1e6 : (now - this.last) - (1000 / this.fps()) * 0.75;
   };
 
   AsciiView.prototype.tick = function (now) {
@@ -264,8 +264,8 @@
     // every second or so: draw less often if frames are expensive here, more often once they are cheap again
     if (++this.frames % 25 === 0) {
       var cap = this.fpsCap || this.o.fps;
-      if (this.cost > 9) this.fpsCap = Math.max(10, cap - 4);
-      else if (this.cost < 5 && this.fpsCap) this.fpsCap = cap + 2 >= this.o.fps ? 0 : cap + 2;
+      if (this.cost > 10) this.fpsCap = Math.max(24, cap - 6);
+      else if (this.cost < 6 && this.fpsCap) this.fpsCap = cap + 6 >= this.o.fps ? 0 : cap + 6;
     }
     this.dirty = false;
   };
@@ -307,7 +307,7 @@
     }
 
     var ramp = this.ramp, rn = ramp.length - 1;
-    var gamma = o.gamma, jit = o.jitter;
+    var gamma = o.gamma, jit = o.jitter, jseed = Math.imul(((this.t * 15) | 0) + 1, 0x9e3779b1);
     var color = o.mode === 'color';
     var out = this.colImg.data;
     var edges = o.edges, thr = o.edgeThresh, asp = this.aspect;
@@ -353,7 +353,10 @@
         }
         if (!c) {
           var v = gamma === 1 ? L[idx] : Math.pow(L[idx], gamma);
-          if (jit) v += (Math.random() - 0.5) * jit;
+          if (jit) {
+            var hn = Math.imul(idx ^ jseed, 0x85ebca6b); hn ^= hn >>> 13; hn = Math.imul(hn, 0xc2b2ae35); hn ^= hn >>> 16;
+            v += ((hn >>> 0) / 4294967296 - 0.5) * jit;
+          }
           var k = (v * rn + 0.5) | 0;
           c = ramp[k < 0 ? 0 : k > rn ? rn : k];
         }
@@ -496,7 +499,7 @@
 
   // Draw the most overdue views first and stop when this frame's time budget is used,
   // so two pictures on screen take turns instead of both drawing in the same frame.
-  var BUDGET_MS = 6;
+  var BUDGET_MS = 8;
   var dueList = [];
   function frame(now) {
     global.requestAnimationFrame(frame);
