@@ -84,7 +84,10 @@ canvas.ascii { display: block; width: 100%; cursor: crosshair; touch-action: pan
 }
 
 /* ---------- overlays ---------- */
-.fx { position: fixed; inset: 0; pointer-events: none; z-index: 70; overflow: hidden; }
+.fx { position: fixed; inset: 0; pointer-events: none; z-index: 70; overflow: hidden; contain: strict; }
+/* each overlay gets its own GPU layer, so scrolling and animation never repaint it */
+.fx-noise, .fx-scan, .fx-vignette { will-change: transform; }
+.lite .fx-noise, .lite .fx-vignette { display: none; }
 .fx-noise {
   position: absolute;
   inset: -120px;

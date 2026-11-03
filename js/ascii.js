@@ -102,7 +102,27 @@
 
   var views = [];
 
+  // Canvas positions are read in one batch at the start of a frame, and only after
+  // something could have moved them. Reading them per view inside the frame forced the
+  // browser to lay the page out again and again, which shows up as occasional stutter.
+  var rectsDirty = true;
+  function markRects() { rectsDirty = true; }
+  global.addEventListener('scroll', markRects, { passive: true });
+  setInterval(markRects, 500); // late layout changes: fonts, a resized textarea
+
+  // Low-power fallback: if the page keeps running well below 60 fps, draw the pictures at
+  // 1x resolution and drop the grain and vignette layers.
+  var maxDpr = 2, lite = false, gaps = [], lastFrame = 0;
+  function goLite() {
+    if (lite) return;
+    lite = true;
+    maxDpr = 1;
+    document.documentElement.classList.add('lite');
+    for (var i = 0; i < views.length; i++) views[i].resize();
+  }
+
   var io = new IntersectionObserver(function (entries) {
+    rectsDirty = true;
     for (var i = 0; i < entries.length; i++) {
       var v = entries[i].target.__ascii;
       if (!v) continue;
@@ -112,6 +132,7 @@
   }, { rootMargin: '160px 0px' });
 
   var ro = new ResizeObserver(function (entries) {
+    rectsDirty = true;
     for (var i = 0; i < entries.length; i++) {
       var v = entries[i].target.__asciiParent;
       if (v && Math.abs(v.canvas.clientWidth - v.cssW) > 1) v.resize();
@@ -168,7 +189,7 @@
       (narrow && o.heightRatioNarrow ? o.heightRatioNarrow : o.heightRatio);
     var rows = Math.max(8, Math.round(cssW * hr / ch));
     var cssH = Math.round(rows * ch);
-    var dpr = Math.min(2, global.devicePixelRatio || 1);
+    var dpr = Math.min(maxDpr, global.devicePixelRatio || 1);
 
     this.ramp = o.ramp === 'auto' ? autoRamp(o.weight, o.family) : o.ramp;
     this.duo = o.duo ? [rgbOf(o.duo[0]), rgbOf(o.duo[1])] : null;
@@ -229,7 +250,7 @@
     this.last = now;
     this.dt = dt;
     this.t += dt;
-    var r = this.canvas.getBoundingClientRect();
+    var r = this.rect || (this.rect = this.canvas.getBoundingClientRect());
     this.px = (Pointer.x - r.left - this.ox) / this.cellW;
     this.py = (Pointer.y - r.top) / this.cellW;
     this.pointerActive = Pointer.active && now - Pointer.last < 5000;
@@ -479,7 +500,20 @@
   var dueList = [];
   function frame(now) {
     global.requestAnimationFrame(frame);
-    if (document.hidden) return;
+    if (document.hidden) { lastFrame = 0; return; }
+    if (lastFrame && !lite) {
+      gaps.push(now - lastFrame);
+      if (gaps.length >= 150) {
+        var sorted = gaps.slice().sort(function (a, b) { return a - b; });
+        if (sorted[75] > 24) goLite(); // median frame longer than 24 ms: below ~42 fps for 2-3 s
+        gaps.length = 0;
+      }
+    }
+    lastFrame = now;
+    if (rectsDirty) {
+      rectsDirty = false;
+      for (var r = 0; r < views.length; r++) if (views[r].visible) views[r].rect = views[r].canvas.getBoundingClientRect();
+    }
     dueList.length = 0;
     for (var i = 0; i < views.length; i++) {
       if (!views[i].visible) continue;
@@ -510,6 +544,8 @@
   global.ASCII = {
     AsciiView: AsciiView, RAMPS: RAMPS, Pointer: Pointer, views: views, start: start,
     clearRamps: function () { rampCache = {}; },
+    goLite: goLite,
+    isLite: function () { return lite; },
     TAU: TAU, clamp: clamp, lerp: lerp, rand: rand, ease: ease, reduced: reduced
   };
 })(window);

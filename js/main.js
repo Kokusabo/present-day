@@ -615,14 +615,16 @@
     var els = $$('.peep');
     var blinkUntil = 0;
     setInterval(function () {
-      var now = performance.now(), closed = now < blinkUntil;
-      for (var i = 0; i < els.length; i++) {
-        var el = els[i], r = el.getBoundingClientRect();
+      var now = performance.now(), closed = now < blinkUntil, rects = [], i;
+      // read every position first, then write: mixing the two makes the browser re-layout per eye
+      for (i = 0; i < els.length; i++) rects.push(els[i].getBoundingClientRect());
+      for (i = 0; i < els.length; i++) {
+        var el = els[i], r = rects[i];
         if (r.bottom < 0 || r.top > window.innerHeight) continue;
         var dx = A.Pointer.active ? A.Pointer.x - (r.left + r.width / 2) : Math.sin(now / 1400 + i) * 300;
         var pos = Math.round(clamp(dx / 260, -1, 1) + 1);
         var e = closed ? '(---)' : '(' + repeat(' ', pos) + '@' + repeat(' ', 2 - pos) + ')';
-        el.textContent = e + ' ' + e;
+        if (el.textContent !== e + ' ' + e) el.textContent = e + ' ' + e;
       }
       if (!closed && Math.random() < 0.012) blinkUntil = now + 150;
     }, 90);
@@ -818,6 +820,8 @@
   }
 
   /* ---------- start ---------- */
+  // ?lite in the address: start in the low-power mode straight away
+  if (/[?&]lite\b/.test(location.search)) A.goLite();
   boot();
   clock();
   ticker();
