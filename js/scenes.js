@@ -834,5 +834,101 @@
     };
   }
 
-  global.SCENES = { Eye: Eye, Bloom: Bloom, Moon: Moon, Wires: Wires, Snow: Snow };
+  /* ====================================================================
+   * HANDS - two hands reaching for each other, never quite touching
+   * ==================================================================== */
+  function Hands() {
+    var st = { t0: 0 };
+    var dust = [], r = rng(77), i;
+    for (i = 0; i < 70; i++) dust.push({ x: r(), y: r(), p: r() * TAU, s: 0.3 + r() * 0.7 });
+    // one hand pointing right, wrist at (0, 0); each finger is three segments that bend from the knuckle
+    var FINGERS = [
+      { k: [8, -6], a: -0.75, l: [10, 9, 7], w: [6.6, 5.8, 5], b: [0.15, 0.2, 0.1], thumb: true },
+      { k: [25, 13], a: 0.4, l: [8, 6, 5], w: [4.2, 3.9, 3.5], b: [0.55, 0.75, 0.6] },
+      { k: [29, 8.5], a: 0.25, l: [11, 8, 6], w: [5, 4.6, 4.1], b: [0.5, 0.7, 0.6] },
+      { k: [31, 3], a: 0.12, l: [12, 9, 7], w: [5.3, 4.9, 4.4], b: [0.4, 0.6, 0.5] },
+      { k: [30, -3], a: -0.06, l: [14, 10, 8], w: [5.2, 4.8, 4.2], b: [0.03, 0.05, 0.04], index: true }
+    ];
+    function chain(f, curl, droop) {
+      var x = f.k[0], y = f.k[1], a = f.a, pts = [[x, y]];
+      for (var j = 0; j < 3; j++) {
+        a += f.b[j] * (f.index ? droop : f.thumb ? 1 : curl);
+        x += Math.cos(a) * f.l[j]; y += Math.sin(a) * f.l[j];
+        pts.push([x, y]);
+      }
+      return pts;
+    }
+    function segments(ctx, pts, w, color, pad) {
+      ctx.strokeStyle = color;
+      for (var j = 0; j < 3; j++) {
+        ctx.lineWidth = w[j] + pad;
+        ctx.beginPath(); ctx.moveTo(pts[j][0], pts[j][1]); ctx.lineTo(pts[j + 1][0], pts[j + 1][1]); ctx.stroke();
+      }
+    }
+    function hand(ctx, tipX, tipY, angle, s, flip, curl, droop) {
+      var chains = FINGERS.map(function (f) { return chain(f, curl, droop); });
+      var tip = chains[4][3];
+      ctx.save();
+      ctx.translate(tipX, tipY); ctx.rotate(angle); ctx.scale(s * (flip ? -1 : 1), s);
+      ctx.translate(-tip[0], -tip[1]);
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      // forearm, coming out of the dark
+      var g = ctx.createLinearGradient(-90, 0, 2, 0);
+      g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.6, '#3e3b38'); g.addColorStop(1, '#6e6a64');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.moveTo(-95, -7); ctx.quadraticCurveTo(-45, -8.5, 3, -7);
+      ctx.lineTo(4, 8); ctx.quadraticCurveTo(-45, 12, -95, 13); ctx.closePath(); ctx.fill();
+      var lg = ctx.createLinearGradient(-60, 0, 3, 0);
+      lg.addColorStop(0, 'rgba(236,230,220,0)'); lg.addColorStop(1, 'rgba(236,230,220,0.7)');
+      ctx.strokeStyle = lg; ctx.lineWidth = 0.9;
+      ctx.beginPath(); ctx.moveTo(-60, -7.6); ctx.quadraticCurveTo(-25, -7.8, 3, -7); ctx.stroke();
+      // palm
+      var pg = ctx.createRadialGradient(14, 2, 2, 16, 5, 20);
+      pg.addColorStop(0, '#9e988e'); pg.addColorStop(1, '#4e4a45');
+      ctx.fillStyle = pg;
+      ctx.beginPath(); ctx.ellipse(16, 5, 16, 11, 0.08, 0, TAU); ctx.fill();
+      // fingers: a dark rim first so neighbours stay apart, then the finger itself
+      for (var k = 0; k < 5; k++) {
+        var f = FINGERS[k], c = f.index ? '#cfc9bf' : f.thumb ? '#8e897f' : '#77726a';
+        segments(ctx, chains[k], f.w, '#000000', 2.4);
+        segments(ctx, chains[k], f.w, c, 0);
+        // a joint crease on each bent knuckle
+        if (!f.index) {
+          ctx.strokeStyle = 'rgba(20,18,16,0.6)'; ctx.lineWidth = 0.6;
+          var m = chains[k][1];
+          ctx.beginPath(); ctx.arc(m[0], m[1], f.w[0] * 0.35, 0, Math.PI); ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+    return {
+      state: st,
+      draw: function (ctx, v, t) {
+        var W = v.W, H = v.H;
+        // on narrow screens look closer: the hands fill the width and the arms run off the edges
+        var cw = W / H < 1.6 ? 118 : 200, ch = cw * 0.5;
+        var F0 = fit(v, cw, ch, 1, 0.5, 0.5);
+        var F = { s: F0.s, x: F0.x - (100 - cw / 2) * F0.s, y: F0.y - (46 - ch / 2) * F0.s };
+        for (i = 0; i < dust.length; i++) {
+          var u = dust[i];
+          ctx.fillStyle = 'rgba(220,214,204,' + (0.14 + 0.14 * Math.sin(t * 1.5 + u.p)) + ')';
+          circle(ctx, ((u.x * W + t * 0.8 * u.s) % W + W) % W, u.y * H + Math.sin(t * 0.6 + u.p) * 1.5, 0.35);
+        }
+        ctx.save();
+        ctx.translate(F.x, F.y); ctx.scale(F.s, F.s);
+        // the hands slide in, then hover a few units apart
+        var k = Math.min(1, Math.max(0, (t - st.t0) / 1.8)), e = 1 - Math.pow(1 - k, 3);
+        var gap = 5 + (1 - e) * 30 + Math.sin(t * 1.4) * 1;
+        var cx = 100, cy = 44;
+        var spark = ctx.createRadialGradient(cx, cy - 1.5, 0, cx, cy - 1.5, 6 + Math.sin(t * 3.1) * 1.2);
+        spark.addColorStop(0, 'rgba(255,40,52,' + e + ')'); spark.addColorStop(0.35, 'rgba(255,40,52,' + (0.5 * e) + ')'); spark.addColorStop(1, 'rgba(255,40,52,0)');
+        ctx.fillStyle = spark; ctx.fillRect(cx - 12, cy - 14, 24, 24);
+        hand(ctx, cx - gap / 2, cy + 1, -0.2 + Math.sin(t * 0.7) * 0.015, 1.1, false, 1, 1.8);
+        hand(ctx, cx + gap / 2, cy - 2.5, -0.24 + Math.sin(t * 0.6 + 1) * 0.015, 1.1, true, 0.7, 0.4);
+        ctx.restore();
+      }
+    };
+  }
+
+  global.SCENES = { Eye: Eye, Bloom: Bloom, Moon: Moon, Wires: Wires, Snow: Snow, Hands: Hands };
 })(window);

@@ -386,6 +386,69 @@ main {
 .snow-cap .hint { color: var(--dim); font-style: italic; }
 #lights { color: var(--blood); }
 
+/* the hands: a three second secret */
+.scream {
+  position: fixed;
+  inset: 0;
+  z-index: 69;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-block: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: #000;
+  cursor: pointer;
+}
+.scream[hidden] { display: none; }
+.scream canvas.ascii { width: min(1240px, 100%); cursor: pointer; }
+.scream.on { animation: scream-in 0.35s steps(4) both; }
+.scream.out { opacity: 0; transition: opacity 0.45s ease; }
+@keyframes scream-in {
+  0% { opacity: 0; transform: translateX(-2%) skewX(8deg); }
+  40% { opacity: 1; transform: translateX(1.5%) skewX(-5deg); }
+  70% { transform: translateX(-0.6%) skewX(1deg); }
+  100% { opacity: 1; transform: none; }
+}
+.scream-text {
+  position: relative;
+  margin: -0.3em 0 0;
+  max-width: 18ch;
+  text-align: center;
+  font: 900 clamp(1.9rem, 6.4vw, 5rem)/1.02 var(--f-serif);
+  letter-spacing: -0.01em;
+  color: var(--white);
+  text-wrap: balance;
+}
+.scream.on .scream-text { animation: text-in 1.2s steps(10) 0.25s both; }
+@keyframes text-in { 0% { opacity: 0; } 20% { opacity: 1; } 30% { opacity: 0.15; } 40%, 100% { opacity: 1; } }
+.scream-text::before, .scream-text::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.scream-text::before { color: var(--blood); animation: slice-a 0.9s steps(1) infinite; }
+.scream-text::after { color: var(--bone); opacity: 0.75; animation: slice-b 1.3s steps(1) infinite; }
+@keyframes slice-a {
+  0% { clip-path: inset(0 0 72% 0); transform: translate(-6px, 0); }
+  20% { clip-path: inset(40% 0 35% 0); transform: translate(7px, 0); }
+  40% { clip-path: inset(80% 0 4% 0); transform: translate(-3px, 0); }
+  60% { clip-path: inset(12% 0 60% 0); transform: translate(5px, 0); }
+  80% { clip-path: inset(55% 0 20% 0); transform: translate(-7px, 0); }
+  100% { clip-path: inset(0 0 100% 0); transform: none; }
+}
+@keyframes slice-b {
+  0% { clip-path: inset(62% 0 10% 0); transform: translate(4px, 1px); }
+  25% { clip-path: inset(5% 0 82% 0); transform: translate(-5px, 0); }
+  50% { clip-path: inset(30% 0 50% 0); transform: translate(3px, -1px); }
+  75% { clip-path: inset(70% 0 0 0); transform: translate(-4px, 0); }
+  100% { clip-path: inset(0 0 100% 0); transform: none; }
+}
+.secret { padding: 0; border: 0; background: none; color: var(--ash); cursor: default; }
+.secret:hover { color: var(--blood); }
+
 /* write */
 .write-grid {
   display: grid;
@@ -587,6 +650,8 @@ main {
   html { scroll-behavior: auto; }
   /* calm mode: the pictures still move gently (see ascii.js), only flicker and flashes stop */
   .glitches span { animation: none; }
+  .scream.on, .scream.on .scream-text { animation: none; }
+  .scream-text::before, .scream-text::after { display: none; }
   .laugh { display: none; }
   .heaven-light, .heaven-light.on { transition: none; }
 }

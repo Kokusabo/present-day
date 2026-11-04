@@ -211,7 +211,21 @@
       analyser.getByteFrequencyData(bins);
       return bins;
     }
-    return { unlock: ctx, humStart: humStart, humStop: humStop, play: play, stop: stop, spectrum: spectrum, TRACKS: TRACKS };
+    // a short burst of static, for the hands
+    function crackle() {
+      var a = ctx();
+      if (!a) return;
+      var src = a.createBufferSource(), bp = a.createBiquadFilter(), g = a.createGain(), now = a.currentTime;
+      src.buffer = noise();
+      bp.type = 'bandpass'; bp.frequency.value = 2400; bp.Q.value = 0.6;
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(0.14, now + 0.02);
+      g.gain.setValueAtTime(0.14, now + 0.18);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+      src.connect(bp); bp.connect(g); g.connect(master);
+      src.start(now, Math.random()); src.stop(now + 0.55);
+    }
+    return { unlock: ctx, humStart: humStart, humStop: humStop, play: play, stop: stop, spectrum: spectrum, crackle: crackle, TRACKS: TRACKS };
   })();
 
   function humToggle() {
@@ -438,7 +452,8 @@
       'higanbana.txt': ['the leaves and the flowers never meet.', 'that is the whole story.'],
       'moon.raw': ['binary file.', 'it only ever shows you one side.'],
       'layer_07.log': ['[03:12:07] you said you were here.', "[03:12:08] you weren't.", '[03:12:09] we waited anyway.'],
-      'heaven.box': ['[ ] < heaven!', 'there is a box at the end of the page. check it.']
+      'heaven.box': ['[ ] < heaven!', 'there is a box at the end of the page. check it.'],
+      'one.txt': ['you already know what to do with it.']
     };
     function scrollTo(id) { var el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }); }
     var CMDS = {
@@ -446,7 +461,8 @@
         return ['ls          cat <file>   whoami', 'connect     date         echo <text>', 'listen      moon         bloom',
           'hum         play         heaven', 'clear       exit'];
       },
-      ls: function () { return ['eye_01.raw   higanbana.txt   moon.raw', 'layer_07.log   heaven.box   you.txt']; },
+      ls: function () { return ['eye_01.raw   higanbana.txt   moon.raw', 'layer_07.log   heaven.box   you.txt', 'one.txt']; },
+      touch: function () { setTimeout(api.scream, 450); return ['...']; },
       cat: function (arg) {
         if (!arg) return { err: ['cat: what?'] };
         if (arg === 'you.txt') return { err: ['cat: you.txt: permission denied.', 'you are not readable.'] };
@@ -674,6 +690,54 @@
   }
 
   /* ---------- heaven ---------- */
+  /* ---------- the hands (a secret) ---------- */
+  function screamer() {
+    var el = $('#scream'), view = null, busy = false, opened = 0, timers = [];
+    function clear() { timers.forEach(clearTimeout); timers = []; }
+    function close(force) {
+      if (!busy || (force !== true && performance.now() - opened < 600)) return;
+      clear();
+      el.classList.add('out');
+      timers.push(setTimeout(function () { el.hidden = true; el.classList.remove('on', 'out'); busy = false; }, 450));
+    }
+    function open() {
+      if (busy) return;
+      busy = true;
+      opened = performance.now();
+      el.hidden = false;
+      el.classList.remove('out', 'on');
+      void el.offsetWidth;
+      el.classList.add('on');
+      requestAnimationFrame(function () {
+        if (!view) {
+          scenes.hands = S.Hands();
+          view = new A.AsciiView($('#cv-hands'), scenes.hands, {
+            mode: 'color', duo: DUO, cols: 200, colsNarrow: 110,
+            heightRatio: function (w) { return Math.min(w < 600 ? 0.75 : 0.6, window.innerHeight * 0.6 / w); },
+            gamma: 1.3, lumMix: 0.5, edges: true, edgeThresh: 0.16, jitter: 0.02, fps: 60
+          });
+        } else view.resize();
+        scenes.hands.state.t0 = view.t;
+        view.kick(1);
+      });
+      Sound.crackle();
+      timers.push(setTimeout(function () { if (view) view.kick(0.9); Sound.crackle(); }, 2000));
+      timers.push(setTimeout(function () { close(true); }, 3000));
+    }
+    el.addEventListener('pointerdown', close);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(true); });
+    // ways in: the little eyes at the very bottom, or the big eye clicked five times in a row
+    $('#secret').addEventListener('click', open);
+    var clicks = [];
+    $('#cv-eye').addEventListener('pointerdown', function () {
+      var now = performance.now();
+      clicks = clicks.filter(function (c) { return now - c < 2500; });
+      clicks.push(now);
+      if (clicks.length >= 5) { clicks = []; open(); }
+    });
+    return open;
+  }
+
   function heaven() {
     var box = $('#heaven-box'), light = $('#heaven-light'), word = $('#heaven-word'), busy = false;
     function go() {
@@ -837,7 +901,8 @@
   var hum = humToggle();
   var pd = presentDay();
   var heavenGo = heaven();
+  var scream = screamer();
   var player = mediaPlayer();
-  terminal({ laugh: pd.laugh, hum: hum, heaven: heavenGo, player: player });
+  terminal({ laugh: pd.laugh, hum: hum, heaven: heavenGo, player: player, scream: scream });
   whenFonts(function () { makeViews(); readouts(); });
 })();
