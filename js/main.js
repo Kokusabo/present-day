@@ -313,6 +313,12 @@
       chew: function () { if (!ctx()) return; send(tape(0.5, false), 0.6); send(tv(0.12), 0.35); },
       burst: function () { if (!ctx()) return; send(data(0.22), 0.32); send(tv(0.18), 0.4, 0.06); },
       close: function () { if (!ctx()) return; send(tape(0.42, true), 0.6); send(pop(), 0.5, 0.4); },
+      // one blip for a click, louder; this may also be what starts the audio, so it opens the context
+      tap: function () {
+        if (!ctx()) return;
+        lastBlip = performance.now();
+        send(Math.random() < 0.65 ? data(0.07 + Math.random() * 0.08) : tv(0.08 + Math.random() * 0.05), 0.34);
+      },
       // short blips that go with the picture jumping; never closer than 170 ms
       blip: function () {
         var now = performance.now();
@@ -899,6 +905,7 @@
       clicks = clicks.filter(function (c) { return now - c < 2500; });
       clicks.push(now);
       if (clicks.length >= 5) { clicks = []; open(); }
+      else Sound.glitch.tap();             // the eye glitches when clicked, and now it sounds like it
     });
     return open;
   }
