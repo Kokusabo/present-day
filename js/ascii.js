@@ -95,6 +95,7 @@
     fillDim: 0,           // colour mode: dim the fill characters so inked lines stand out
     duo: null,            // colour mode: [base, accent] - every cell becomes a shade of base, or accent where the scene is red
     heavyGlitch: false,   // glitches also corrupt blocks of characters and leave red/bone ghosts
+    duoMin: 0.42,         // colour mode with duo: how dark the darkest characters get (0 = black, 1 = all full colour)
     inkTint: null,        // mono mode: colour for inked lines (drawn in a second pass)
     jitter: 0.02,
     fps: 60,
@@ -376,7 +377,7 @@
               // how red is this cell: red channel above the others, relative to its brightness
               var red = m > 8 ? (r - (gg > bb ? gg : bb)) / m : 0;
               var w = red < 0.3 ? 0 : red > 0.6 ? 1 : (red - 0.3) / 0.3;
-              var shade = 0.42 + 0.58 * Math.min(1, L[src] * 1.5);
+              var shade = o.duoMin + (1 - o.duoMin) * Math.min(1, L[src] * 1.5);
               var A0 = duo[0], A1 = duo[1];
               out[q] = (A0[0] + (A1[0] - A0[0]) * w) * (w ? 1 : shade);
               out[q + 1] = (A0[1] + (A1[1] - A0[1]) * w) * (w ? 1 : shade);

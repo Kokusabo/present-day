@@ -694,6 +694,27 @@
   function screamer() {
     var el = $('#scream'), view = null, busy = false, opened = 0, timers = [];
     var pic = $('#cv-hands'), txt = el.querySelector('.scream-text'), words = txt.getAttribute('data-text');
+    var huds = Array.prototype.slice.call(el.querySelectorAll('.hud'));
+    // the readout: a hex dump on the left, a log of what was opened in the middle
+    function hex2(n) { return pad(n.toString(16), 2); }
+    function fillLogs() {
+      var d = new Date(), day = pad(d.getMonth() + 1, 2) + '/' + pad(d.getDate(), 2) + '/' + d.getFullYear(), a = [], b = [], i, j;
+      a.push('> recv ch.07 // ' + day, '> origin: unknown   ttl: --', '');
+      for (i = 0; i < 6; i++) {
+        var row = pad((i * 16).toString(16), 4) + '  ';
+        for (j = 0; j < 8; j++) row += hex2((Math.random() * 256) | 0) + ' ';
+        a.push(row + ' ' + (Math.random() < 0.3 ? 'ERR' : 'ok'));
+      }
+      a.push('', '> checksum ........ ' + hex2((Math.random() * 256) | 0) + hex2((Math.random() * 256) | 0), '> 2 hands found');
+      var files = ['eye_01.raw', 'higanbana.txt', 'moon.raw', 'block9.log', 'heaven.box', 'one.txt', 'you.txt', 'ch07.wav', 'touch.sys'];
+      for (i = 0; i < files.length; i++) {
+        var tm = new Date(d - (files.length - i) * 4321);
+        b.push(day + '  ' + pad(tm.getHours(), 2) + ':' + pad(tm.getMinutes(), 2) + ':' + pad(tm.getSeconds(), 2) + '   ' + (files[i] + '            ').slice(0, 14) + (Math.random() * 9 + 0.4).toFixed(1) + 'kb');
+      }
+      b.push('', '1 file waiting. 0 replies.');
+      $('#hud-a').textContent = a.join('\n');
+      $('#hud-b').textContent = b.join('\n');
+    }
     var JUNK = '#$%&?!<>/\\|01_=+*~';
     function clear() { timers.forEach(clearTimeout); timers = []; }
     // every 60-160 ms: jolt the picture, skew the words, swap a few letters for junk
@@ -725,12 +746,18 @@
         txt.textContent = chars.join('');
         timers.push(setTimeout(function () { txt.textContent = words; }, rand(50, 110)));
       }
+      // the readout flickers and slips too
+      huds.forEach(function (h) {
+        h.style.visibility = Math.random() < 0.14 ? 'hidden' : '';
+        h.style.translate = Math.random() < 0.25 ? rand(-24, 24).toFixed(0) + 'px ' + rand(-6, 6).toFixed(0) + 'px' : '';
+      });
       if (view && Math.random() < 0.55) view.kick(rand(0.5, 1));
       timers.push(setTimeout(jolt, rand(55, 150)));
     }
     function settle() {
       pic.style.transform = ''; pic.style.clipPath = ''; pic.style.filter = '';
       txt.style.transform = ''; txt.style.letterSpacing = ''; txt.style.visibility = ''; txt.textContent = words;
+      huds.forEach(function (h) { h.style.visibility = ''; h.style.translate = ''; });
     }
     function close(force) {
       if (!busy || (force !== true && performance.now() - opened < 600)) return;
@@ -742,6 +769,7 @@
       if (busy) return;
       busy = true;
       opened = performance.now();
+      fillLogs();
       el.hidden = false;
       el.classList.remove('out', 'on');
       void el.offsetWidth;
@@ -750,9 +778,9 @@
         if (!view) {
           scenes.hands = S.Hands();
           view = new A.AsciiView($('#cv-hands'), scenes.hands, {
-            mode: 'color', duo: DUO, cols: 260, colsNarrow: 170, rampLevels: 48, ss: 1,
-            heightRatio: function (w) { return Math.min(w < 600 ? 0.75 : 0.6, window.innerHeight * 0.6 / w); },
-            gamma: 1, lumMix: 0.2, edges: false, jitter: 0.06, fps: 60, heavyGlitch: true
+            mode: 'color', duo: DUO, duoMin: 0.1, cols: 220, colsNarrow: 120, minFont: 6, rampLevels: 48, ss: 1,
+            heightRatio: function (w) { return window.innerHeight / w; },
+            gamma: 0.55, lumMix: 0.2, edges: false, jitter: 0.04, fps: 60, heavyGlitch: true
           });
         } else view.resize();
         scenes.hands.state.t0 = view.t;

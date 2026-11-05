@@ -835,42 +835,41 @@
   }
 
   /* ====================================================================
-   * HANDS - two different hands reaching for each other, never quite touching.
-   * Shaded softly (many tones, no heavy outlines) so the ascii shows a wide range of characters.
+   * HANDS - the reach from Michelangelo's fresco (public domain): a limp hand on
+   * the left, a reaching one on the right, drawn here from scratch as soft shapes
    * ==================================================================== */
   function Hands() {
     var st = { t0: 0 };
-    var dust = [], r = rng(77), i;
-    for (i = 0; i < 90; i++) dust.push({ x: r(), y: r(), p: r() * TAU, s: 0.3 + r() * 0.7 });
+    var r = rng(77), i;
+    var dust = [];
+    for (i = 0; i < 60; i++) dust.push({ x: r(), y: r(), p: r() * TAU, s: 0.3 + r() * 0.7 });
 
-    // a finger: knuckle k, base angle a, segment lengths l, widths w at its four joints, bend per joint
+    // a finger: knuckle k, base angle a, segment lengths l, widths at its four joints w, bend per joint b
     function F(k, a, l, w, b, kind) { return { k: k, a: a, l: l, w: w, b: b, kind: kind }; }
-    // left: a relaxed open hand seen from the thumb side; the fingers lie in a loose fan, the index leads
-    var OPEN = {
-      view: 'side',
-      palm: [[0, -5.6], [9, -6.6], [18, -6.6], [25, -5.8], [29.5, -4.2], [31, -1], [30.5, 2.6], [28, 5.2], [20, 6.2], [10, 6.6], [0, 6]],
+    // both hands are seen from the back; the left one hangs limp, its fingers drooping together
+    var LIMP = {
+      body: [[0, -6], [7, -6.8], [15, -7.2], [22, -6.8], [27.5, -5.4], [30, -2.8], [30.2, 1.6], [28.8, 5.6], [25, 8.6], [16, 9], [7, 7.6], [0, 6]],
+      arm: [[-130, -5], [-80, -3], [-36, -1], [2, 0.2]], armW: [17, 16, 14.5, 12.5],
       fingers: [
-        F([27.5, 3.6], 0.18, [7.5, 5.5, 4.6], [3.5, 3.2, 2.9, 2.4], [0.16, 0.24, 0.2], 'behind'),
-        F([29.5, 1.6], 0.12, [9.5, 6.8, 5.4], [3.9, 3.6, 3.2, 2.7], [0.13, 0.2, 0.16], 'behind'),
-        F([30.6, -0.6], 0.07, [10, 7, 5.5], [4.2, 3.9, 3.4, 2.8], [0.1, 0.16, 0.13], 'behind'),
-        F([29.6, -3.1], -0.05, [10.2, 7, 6], [4.3, 4, 3.5, 2.9], [0.02, 0.05, 0.04], 'index'),
-        F([8, 4.6], 0.26, [9, 7.5, 6], [5, 4.5, 3.9, 3.3], [-0.1, -0.12, -0.08], 'thumb')
+        F([13, 7.4], 0.55, [7.5, 6.5, 5], [5.4, 4.7, 4.1, 3.4], [-0.12, -0.16, -0.1], 'thumb'),
+        F([26.6, 6.2], 0.38, [7.4, 5.4, 4.4], [3.7, 3.4, 3, 2.5], [0.34, 0.46, 0.36], 'f'),
+        F([28.8, 3], 0.3, [9.4, 6.6, 5.2], [4.3, 3.9, 3.5, 2.9], [0.3, 0.42, 0.34], 'f'),
+        F([29.6, -0.4], 0.24, [10.2, 7, 5.6], [4.6, 4.2, 3.7, 3.1], [0.24, 0.36, 0.3], 'f'),
+        F([28.8, -3.9], 0.18, [9.5, 6.6, 5.6], [4.4, 4, 3.6, 3], [0.18, 0.3, 0.25], 'index')
       ]
     };
-    // right: the back of the hand, index straight out, the other fingers folded into a loose fist
-    var POINT = {
-      view: 'back',
-      palm: [[0, -6.4], [10, -7.2], [20, -7], [27.4, -5.8], [30.6, -2.6], [31, 1.4], [29.4, 5.4], [25, 8.4], [14, 8.4], [4, 7.6], [0, 7]],
+    // the right one reaches: index straight, the others loosely curled beneath it
+    var REACH = {
+      body: [[0, -6], [7, -6.8], [15, -7.2], [22, -6.8], [27.5, -5.4], [30, -2.8], [30.2, 1.6], [28.8, 5.4], [25, 8.2], [16, 8.6], [7, 7.4], [0, 6]],
+      arm: [[-130, 2], [-80, 1.2], [-36, 0.5], [2, 0.2]], armW: [16, 15, 13.5, 12],
       fingers: [
-        F([12, 6.5], 0.25, [8, 6.5, 5.5], [4.8, 4.3, 3.8, 3.2], [0.1, 0.15, 0.1], 'thumb'),
-        F([25.5, 6.6], 0.9, [5, 4, 3.4], [3.7, 3.5, 3.2, 2.8], [0.9, 1.2, 0.8], 'fist'),
-        F([28.2, 3.4], 0.8, [5.6, 4.4, 3.6], [4.1, 3.9, 3.5, 3], [0.9, 1.2, 0.8], 'fist'),
-        F([29.8, 0], 0.7, [6.2, 4.8, 3.8], [4.4, 4.2, 3.8, 3.2], [0.9, 1.2, 0.8], 'fist'),
-        F([29.6, -4], -0.02, [11, 7.5, 6.5], [4.4, 4.1, 3.6, 3], [0.03, 0.05, 0.04], 'index')
+        F([13, 7], 0.3, [8, 6.8, 5.4], [5.3, 4.6, 4, 3.3], [0.04, 0.08, 0.05], 'thumb'),
+        F([26.6, 6], 0.4, [7, 5, 4], [3.7, 3.4, 3, 2.5], [0.45, 0.6, 0.45], 'f'),
+        F([28.8, 3], 0.3, [8.6, 6, 4.6], [4.3, 3.9, 3.5, 2.9], [0.4, 0.55, 0.4], 'f'),
+        F([29.6, -0.2], 0.2, [9.6, 6.6, 5.2], [4.6, 4.2, 3.7, 3.1], [0.32, 0.45, 0.35], 'f'),
+        F([28.8, -3.6], -0.03, [11, 7.4, 6.2], [4.4, 4, 3.6, 3], [0.02, 0.03, 0.03], 'index')
       ]
     };
-    // mostly dark with light along the top edges, like a hand on black under one lamp;
-    // ten tones so the ascii uses many different characters
     function tones(n, lo, hi, curve) {
       var out = [];
       for (var q = 0; q < n; q++) {
@@ -879,10 +878,8 @@
       }
       return out;
     }
-    // the top tone stays below full white so the densest, heaviest characters only appear in tiny glints
-    var SKIN = tones(14, [22, 21, 19], [170, 164, 156], 1.7);
-    var DIM = tones(14, [18, 17, 15], [120, 116, 109], 1.8);
-    var ARM = tones(14, [14, 13, 11], [70, 67, 62], 2.4);
+    var SKIN = tones(16, [34, 32, 30], [238, 234, 226], 1.15);
+    var ARM = tones(16, [26, 25, 23], [214, 210, 202], 1.25);
 
     function chain(f, mult) {
       var x = f.k[0], y = f.k[1], a = f.a, pts = [[x, y]];
@@ -893,7 +890,6 @@
       }
       return pts;
     }
-    // a closed outline around a centreline, with a round tip
     function outline(pts, ws) {
       var L = [], R = [], n = pts.length, j;
       for (j = 0; j < n; j++) {
@@ -917,8 +913,8 @@
         ctx.moveTo(poly[0][0], poly[0][1]);
         for (var j = 1; j < poly.length; j++) ctx.lineTo(poly[j][0], poly[j][1]);
       } else {
-        var n = poly.length, m0 = [(poly[n - 1][0] + poly[0][0]) / 2, (poly[n - 1][1] + poly[0][1]) / 2];
-        ctx.moveTo(m0[0], m0[1]);
+        var n = poly.length;
+        ctx.moveTo((poly[n - 1][0] + poly[0][0]) / 2, (poly[n - 1][1] + poly[0][1]) / 2);
         for (var k = 0; k < n; k++) {
           var p = poly[k], nx = poly[(k + 1) % n];
           ctx.quadraticCurveTo(p[0], p[1], (p[0] + nx[0]) / 2, (p[1] + nx[1]) / 2);
@@ -930,213 +926,110 @@
       var dx = bx - ax, dy = by - ay, dl = Math.sqrt(dx * dx + dy * dy) || 1, nx = dy / dl, ny = -dx / dl;
       return ny > 0 ? [-nx, -ny] : [nx, ny];
     }
-    // contour lines are written straight into character cells as / | \ _ - ; shapes drawn later erase what is under them
-    var LINE = '#ece6dc', LINE_DIM = '#a39d94', LINE_FAINT = '#625e57';
-    function flat(poly, from, to) {
-      var a = [];
-      for (var q = from || 0; q < (to === undefined ? poly.length : to); q++) a.push(poly[q][0], poly[q][1]);
-      return a;
-    }
-    function smoothPoints(poly) {
-      var n = poly.length, out = [];
-      var mid = function (p, q) { return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2]; };
-      var m = mid(poly[n - 1], poly[0]);
-      out.push(m);
-      for (var k = 0; k < n; k++) {
-        var p = poly[k], m2 = mid(p, poly[(k + 1) % n]);
-        for (var q = 1; q <= 6; q++) {
-          var t = q / 6, u = 1 - t;
-          out.push([u * u * m[0] + 2 * u * t * p[0] + t * t * m2[0], u * u * m[1] + 2 * u * t * p[1] + t * t * m2[1]]);
-        }
-        m = m2;
-      }
-      return out;
-    }
-    function cover(v, ctx, poly) { v.mask(ctx, [flat(poly).concat([poly[0][0], poly[0][1]])]); }
-    // ink only the parts of a closed outline where keep(point) is true
-    function inkWhere(v, ctx, pts, color, keep) {
-      var run = [];
-      for (var q = 0; q <= pts.length; q++) {
-        var p = pts[q % pts.length];
-        if (keep(p)) run.push(p[0], p[1]);
-        else { if (run.length > 2) v.ink(ctx, run, color); run = []; }
-      }
-      if (run.length > 2) v.ink(ctx, run, color);
-    }
-    // fill the shape with the darkest tone, then lay lighter, narrower strokes toward the light
+    // round form lit from above: the darkest tone underneath, lighter narrower bands toward the light
     function softTube(ctx, pts, ws, tone, lit) {
       var poly = outline(pts, ws);
       trace(ctx, poly); ctx.fillStyle = tone[0]; ctx.fill();
       ctx.save(); trace(ctx, poly); ctx.clip();
       var top = Math.min(tone.length - 1, Math.round(lit * (tone.length - 1)));
       for (var L = 1; L <= top; L++) {
-        var f = 1 - L / (top + 1.2);
+        var f = 1 - L / (top + 1.4);
         ctx.strokeStyle = tone[L];
         for (var j = 0; j + 1 < pts.length; j++) {
           var ax = pts[j][0], ay = pts[j][1], bx = pts[j + 1][0], by = pts[j + 1][1];
-          var w = (ws[j] + ws[j + 1]) / 2, n = upNormal(ax, ay, bx, by), o = w * (1 - f) * 0.38;
-          ctx.lineWidth = w * f * 1.05;
+          var w = (ws[j] + ws[j + 1]) / 2, n = upNormal(ax, ay, bx, by), o = w * (1 - f) * 0.34;
+          ctx.lineWidth = w * f * 1.08;
           ctx.beginPath(); ctx.moveTo(ax + n[0] * o, ay + n[1] * o); ctx.lineTo(bx + n[0] * o, by + n[1] * o); ctx.stroke();
         }
-      }
-      // a faint rim of reflected light along the shadow side keeps the shape readable
-      ctx.strokeStyle = tone[3];
-      for (var jj = 0; jj + 1 < pts.length; jj++) {
-        var w2 = (ws[jj] + ws[jj + 1]) / 2, n2 = upNormal(pts[jj][0], pts[jj][1], pts[jj + 1][0], pts[jj + 1][1]), o2 = -w2 * 0.46;
-        ctx.lineWidth = w2 * 0.12;
-        ctx.beginPath(); ctx.moveTo(pts[jj][0] + n2[0] * o2, pts[jj][1] + n2[1] * o2); ctx.lineTo(pts[jj + 1][0] + n2[0] * o2, pts[jj + 1][1] + n2[1] * o2); ctx.stroke();
       }
       ctx.restore();
       return poly;
     }
-    function finger(v, ctx, f, pts, view, t) {
-      var ws = [f.w[0], f.w[1], f.w[2], f.w[3]];
-      var lit = f.kind === 'index' ? 1 : f.kind === 'thumb' ? (view === 'side' ? 0.9 : 0.7) : f.kind === 'behind' ? 0.85 : 0.8;
-      var poly = softTube(ctx, pts, ws, f.kind === 'fist' || (f.kind === 'thumb' && view === 'back') ? DIM : SKIN, lit);
-      cover(v, ctx, poly);
-      var front = f.kind === 'index' || (f.kind === 'thumb' && view === 'side');
-      v.ink(ctx, flat(poly), front ? LINE : LINE_DIM);
-      // the crease at the middle joint
-      var cp = pts[2], cn = upNormal(pts[1][0], pts[1][1], pts[3][0], pts[3][1]), cw = ws[2] * 0.3;
-      v.ink(ctx, [cp[0] + cn[0] * cw, cp[1] + cn[1] * cw, cp[0] + 0.4, cp[1]], LINE_FAINT);
-      // joint creases, faint
-      ctx.strokeStyle = 'rgba(14,12,10,0.3)'; ctx.lineWidth = 0.22;
+    function finger(ctx, f, pts) {
+      var poly = softTube(ctx, pts, f.w, SKIN, f.kind === 'thumb' ? 0.72 : f.kind === 'index' ? 1 : 0.9);
+      // knuckle folds: a little shadow under each joint, a little light on top of it
       for (var j = 1; j <= 2; j++) {
-        var p = pts[j], n = upNormal(pts[j - 1][0], pts[j - 1][1], pts[j + 1][0], pts[j + 1][1]), w = ws[j];
-        ctx.beginPath(); ctx.moveTo(p[0] + n[0] * w * 0.4, p[1] + n[1] * w * 0.4);
-        ctx.quadraticCurveTo(p[0] + 0.4, p[1], p[0] + n[0] * w * 0.02, p[1] + n[1] * w * 0.02); ctx.stroke();
+        var p = pts[j], n = upNormal(pts[j - 1][0], pts[j - 1][1], pts[j + 1][0], pts[j + 1][1]), w = f.w[j];
+        var g = ctx.createRadialGradient(p[0] + n[0] * w * 0.2, p[1] + n[1] * w * 0.2, 0, p[0] + n[0] * w * 0.2, p[1] + n[1] * w * 0.2, w * 0.55);
+        g.addColorStop(0, 'rgba(250,246,238,0.35)'); g.addColorStop(1, 'rgba(250,246,238,0)');
+        ctx.fillStyle = g; ctx.fillRect(p[0] - w, p[1] - w, w * 2, w * 2);
       }
-      // the nail shows on the back of the hand and on the thumb
-      if (view === 'back' || f.kind === 'thumb' || f.kind === 'index') {
-        var a = pts[2], b = pts[3], nn = upNormal(a[0], a[1], b[0], b[1]);
-        var len = Math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]));
-        var side = view === 'back' ? 0.14 : -0.1;
-        ctx.save();
-        ctx.translate(a[0] + (b[0] - a[0]) * 0.7 + nn[0] * ws[2] * side, a[1] + (b[1] - a[1]) * 0.7 + nn[1] * ws[2] * side);
-        ctx.rotate(Math.atan2(b[1] - a[1], b[0] - a[0]));
-        ctx.fillStyle = view === 'back' ? 'rgba(236,229,217,0.85)' : 'rgba(210,203,192,0.5)';
-        ctx.beginPath(); ctx.ellipse(0, 0, len * 0.26, ws[2] * 0.24, 0, 0, TAU); ctx.fill();
-        ctx.restore();
-      }
+      // the gap to the neighbour: a dark seam round the finger
+      trace(ctx, poly); ctx.strokeStyle = 'rgba(0,0,0,0.9)'; ctx.lineWidth = 0.55; ctx.stroke();
     }
-    function body(v, ctx, H) {
-      // the forearm, coming out of the dark
-      var arm = softTube(ctx, [[-125, 3.5], [-80, 2], [-36, 0.8], [3, 0.3]], [17, 16, 14, 12.6], ARM, 1);
-      cover(v, ctx, arm);
-      inkWhere(v, ctx, arm, LINE_DIM, function (p) { return p[0] > -26 && p[0] < 1; });
-      inkWhere(v, ctx, arm, LINE_FAINT, function (p) { return p[0] > -70 && p[0] <= -26; });
-      var fade = ctx.createLinearGradient(-125, 0, -8, 0);
-      fade.addColorStop(0, 'rgba(0,0,0,1)'); fade.addColorStop(0.6, 'rgba(0,0,0,0.85)'); fade.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = fade; ctx.fillRect(-130, -14, 123, 32);
-      // the hand: dark, with light running along its top edge
-      var hp = smoothPoints(H.palm);
-      cover(v, ctx, hp);
-      inkWhere(v, ctx, hp, H.view === 'side' ? LINE : LINE_DIM, function (p) { return p[0] > 2.5; });
-      trace(ctx, H.palm, true);
-      var g = ctx.createLinearGradient(0, -8, 0, 8.5);
-      g.addColorStop(0, '#d6cfc3'); g.addColorStop(0.1, '#958e83'); g.addColorStop(0.3, '#55504a');
-      g.addColorStop(0.6, '#2c2925'); g.addColorStop(0.88, '#1d1b18'); g.addColorStop(1, '#4a453f');
-      ctx.fillStyle = g; ctx.fill();
-      ctx.save(); trace(ctx, H.palm, true); ctx.clip();
-      if (H.view === 'side') {
-        // the knuckle of the index and a soft fold above the thumb
-        var kx = H.fingers[3].k;
-        var kb0 = ctx.createRadialGradient(kx[0] - 1.5, kx[1] - 1.6, 0, kx[0] - 1.5, kx[1] - 1.6, 3.2);
-        kb0.addColorStop(0, 'rgba(236,229,217,0.6)'); kb0.addColorStop(1, 'rgba(236,229,217,0)');
-        ctx.fillStyle = kb0; ctx.fillRect(kx[0] - 6, kx[1] - 6, 9, 9);
-        v.ink(ctx, [7, 1.2, 12, 0.3, 17, 0, 22, 0.3, 26, 0.8], LINE_FAINT);
-      } else {
-        // tendons fanning to the knuckles, and the knuckles catching the light
-        for (var k = 1; k <= 4; k++) {
-          var kn = H.fingers[k].k, lift = k === 4 ? 0.5 : 0.28;
-          if (k === 4 || k === 3) v.ink(ctx, [5, -3.5 + k * 1.6, 15, kn[1] * 0.65 - 1.2, kn[0] - 3, kn[1] - 0.8], LINE_FAINT);
-          var kb = ctx.createRadialGradient(kn[0] - 1.2, kn[1] - 1, 0, kn[0] - 1.2, kn[1] - 1, 2.6);
-          kb.addColorStop(0, 'rgba(236,229,217,' + (lift + 0.15) + ')'); kb.addColorStop(1, 'rgba(236,229,217,0)');
-          ctx.fillStyle = kb; ctx.fillRect(kn[0] - 4, kn[1] - 4, 6, 6);
-        }
-      }
-      ctx.restore();
-      // a bone catching light at the wrist
-      ctx.fillStyle = 'rgba(226,219,207,0.35)';
-      ctx.beginPath(); ctx.ellipse(-3, -5.2, 2.2, 1, 0, 0, TAU); ctx.fill();
-    }
-    // a loose fist seen from the back: one rounded mass with the folds between the fingers
-    var FIST = [[26, -2.5], [31.5, -2.6], [34.5, 0.8], [34.3, 5.6], [32.4, 9.8], [28.6, 12.6], [23.6, 12.6], [20.5, 10], [20.8, 5.2], [23, 1.2]];
-    function fist(v, ctx) {
-      var fp = smoothPoints(FIST);
-      cover(v, ctx, fp);
-      inkWhere(v, ctx, fp, LINE_DIM, function (p) { return p[0] > 22 || p[1] > 8; });
-      ctx.beginPath();
-      ctx.moveTo(26, -2.5);
-      ctx.bezierCurveTo(31, -3.2, 34.6, -0.5, 34.4, 3.6);
-      ctx.bezierCurveTo(34.2, 7.6, 32.6, 10.8, 29.4, 12.2);
-      ctx.bezierCurveTo(26, 13.6, 21.6, 12.6, 20.4, 10);
-      ctx.bezierCurveTo(19.6, 7, 21.6, 1.5, 26, -2.5);
-      ctx.closePath();
-      var g = ctx.createLinearGradient(24, -3, 30, 13);
-      g.addColorStop(0, '#a59e92'); g.addColorStop(0.25, '#5d5851'); g.addColorStop(0.7, '#2a2723'); g.addColorStop(1, '#1a1815');
-      ctx.fillStyle = g; ctx.fill();
-      ctx.strokeStyle = 'rgba(8,7,6,0.45)'; ctx.lineWidth = 0.24; ctx.stroke();
-      // three folded fingers: a fold line between each, a little light on each knuckle
-      var folds = [[27.6, 2.6, 34, 3.4], [25.6, 6.2, 33, 7.6], [23.4, 9.2, 30.6, 11]];
-      for (var q = 0; q < folds.length; q++) {
-        var f = folds[q];
-        v.ink(ctx, [f[0], f[1], (f[0] + f[2]) / 2, f[1] - 0.3, f[2], f[3]], LINE_FAINT);
-        var kb = ctx.createRadialGradient(f[0] + 3.5, f[1] - 1.6, 0, f[0] + 3.5, f[1] - 1.6, 2.6);
-        kb.addColorStop(0, 'rgba(226,219,207,' + (0.5 - q * 0.12) + ')'); kb.addColorStop(1, 'rgba(226,219,207,0)');
-        ctx.fillStyle = kb; ctx.fillRect(f[0] - 1, f[1] - 5, 9, 7);
-      }
-    }
-    function hand(v, ctx, H, tipX, tipY, angle, s, flip, t, reach) {
+    function hand(ctx, H, tipX, tipY, angle, s, flip, reach, t) {
       var chains = H.fingers.map(function (f) {
-        var m = f.kind === 'index' ? reach : f.kind === 'thumb' ? 1 : 1 + Math.sin(t * 0.9 + f.k[1]) * 0.04;
-        return chain(f, m);
+        return chain(f, f.kind === 'index' ? reach : 1 + Math.sin(t * 0.8 + f.k[1]) * 0.05);
       });
-      var tip = chains[H.view === 'back' ? 4 : 3][3], k;
+      var tip = chains[4][3], k;
       ctx.save();
       ctx.translate(tipX, tipY); ctx.rotate(angle); ctx.scale(s * (flip ? -1 : 1), s);
       ctx.translate(-tip[0], -tip[1]);
       ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-      if (H.view === 'back') {
-        // the thumb sits under the hand, the fist in front of it, the index on top
-        finger(v, ctx, H.fingers[0], chains[0], H.view, t);
-        body(v, ctx, H);
-        fist(v, ctx);
-        finger(v, ctx, H.fingers[4], chains[4], H.view, t);
-      } else {
-        // the thumb and the other fingers come out from under the hand; the index is on top
-        finger(v, ctx, H.fingers[4], chains[4], H.view, t);
-        for (k = 0; k < 3; k++) finger(v, ctx, H.fingers[k], chains[k], H.view, t);
-        body(v, ctx, H);
-        finger(v, ctx, H.fingers[3], chains[3], H.view, t);
+      // forearm, lit along its top, sinking into the dark away from the hand
+      softTube(ctx, H.arm, H.armW, ARM, 1);
+      var fade = ctx.createLinearGradient(-130, 0, -40, 0);
+      fade.addColorStop(0, 'rgba(0,0,0,0.95)'); fade.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = fade; ctx.fillRect(-135, -22, 96, 44);
+      // the thumb comes from under the hand
+      finger(ctx, H.fingers[0], chains[0]);
+      // the back of the hand
+      trace(ctx, H.body, true);
+      var g = ctx.createLinearGradient(0, -9, 0, 10);
+      g.addColorStop(0, '#ece7df'); g.addColorStop(0.2, '#bdb7ad'); g.addColorStop(0.5, '#7b766e');
+      g.addColorStop(0.85, '#34312d'); g.addColorStop(1, '#1e1c1a');
+      ctx.fillStyle = g; ctx.fill();
+      ctx.save(); trace(ctx, H.body, true); ctx.clip();
+      var sh = ctx.createRadialGradient(14, -3, 0, 14, -3, 14);
+      sh.addColorStop(0, 'rgba(252,248,240,0.4)'); sh.addColorStop(1, 'rgba(252,248,240,0)');
+      ctx.fillStyle = sh; ctx.fillRect(-2, -12, 34, 24);
+      for (k = 1; k <= 4; k++) {
+        var kn = H.fingers[k].k;
+        // tendon ridges toward each knuckle, and the knuckle catching light
+        ctx.strokeStyle = 'rgba(250,246,238,0.1)'; ctx.lineWidth = 0.9;
+        ctx.beginPath(); ctx.moveTo(4, -3 + k * 1.5); ctx.quadraticCurveTo(15, kn[1] * 0.7 - 1, kn[0] - 3, kn[1] - 0.6); ctx.stroke();
+        var kb = ctx.createRadialGradient(kn[0] - 1.5, kn[1] - 1, 0, kn[0] - 1.5, kn[1] - 1, 3.4);
+        kb.addColorStop(0, 'rgba(252,248,240,0.45)'); kb.addColorStop(1, 'rgba(252,248,240,0)');
+        ctx.fillStyle = kb; ctx.fillRect(kn[0] - 6, kn[1] - 5, 9, 9);
       }
+      ctx.restore();
+      // fingers from the far one to the index, each over the last
+      for (k = 1; k <= 4; k++) finger(ctx, H.fingers[k], chains[k]);
       ctx.restore();
     }
 
     return {
       state: st,
       draw: function (ctx, v, t) {
-        var W = v.W, H = v.H;
-        // on narrow screens look closer: the hands fill the width and the arms run off the edges
-        var cw = W / H < 1.6 ? 118 : 200, ch = cw * 0.5;
-        var F0 = fit(v, cw, ch, 1, 0.5, 0.5);
-        var Fz = { s: F0.s, x: F0.x - (100 - cw / 2) * F0.s, y: F0.y - (46 - ch / 2) * F0.s };
+        var W = v.W, H = v.H, wide = W / H > 1.2;
         for (i = 0; i < dust.length; i++) {
           var u = dust[i];
-          ctx.fillStyle = 'rgba(220,214,204,' + (0.12 + 0.12 * Math.sin(t * 1.5 + u.p)) + ')';
-          circle(ctx, ((u.x * W + t * 0.8 * u.s) % W + W) % W, u.y * H + Math.sin(t * 0.6 + u.p) * 1.5, 0.3);
+          ctx.fillStyle = 'rgba(220,214,204,' + (0.1 + 0.1 * Math.sin(t * 1.5 + u.p)) + ')';
+          circle(ctx, ((u.x * W + t * 0.8 * u.s) % W + W) % W, u.y * H, 0.3);
         }
-        ctx.save();
-        ctx.translate(Fz.x, Fz.y); ctx.scale(Fz.s, Fz.s);
-        // the hands slide in, then hover a few units apart
+        // a wave of points in the corner, like a readout of the signal
+        var x0 = wide ? W * 0.6 : W * 0.05, x1 = wide ? W * 0.97 : W * 0.95, yb = wide ? H * 0.86 : H * 0.7, amp = H * (wide ? 0.05 : 0.03);
+        ctx.fillStyle = 'rgba(232,227,218,0.35)';
+        for (var gx = 0; gx <= 8; gx++) ctx.fillRect(x0 + (x1 - x0) * gx / 8, yb - amp * 2.2, 0.12, amp * 4.4);
+        for (var layer = 0; layer < 5; layer++) {
+          for (var x = x0; x < x1; x += 0.55) {
+            var q = (x - x0) / (x1 - x0);
+            var y = yb + amp * (Math.sin(q * 9 + t * 1.8 + layer * 0.7) * 0.8 + Math.sin(q * 23 - t * 2.6 + layer) * 0.35) * (0.4 + q * 0.8) + (r() - 0.5) * amp * 0.5;
+            ctx.fillStyle = 'rgba(232,227,218,' + (0.35 + 0.5 * r()) + ')';
+            ctx.fillRect(x, y, 0.32, 0.32);
+          }
+        }
+        // the hands slide in and hover with a hair's gap between the fingertips
         var k = Math.min(1, Math.max(0, (t - st.t0) / 1.8)), e = 1 - Math.pow(1 - k, 3);
-        var gap = 4.5 + (1 - e) * 30 + Math.sin(t * 1.4) * 0.9;
-        var cx = 100, cy = 44;
-        var spark = ctx.createRadialGradient(cx, cy - 1.5, 0, cx, cy - 1.5, 6 + Math.sin(t * 3.1) * 1.2);
-        spark.addColorStop(0, 'rgba(255,40,52,' + e + ')'); spark.addColorStop(0.35, 'rgba(255,40,52,' + (0.5 * e) + ')'); spark.addColorStop(1, 'rgba(255,40,52,0)');
-        ctx.fillStyle = spark; ctx.fillRect(cx - 12, cy - 14, 24, 24);
-        hand(v, ctx, OPEN, cx - gap / 2, cy + 2, -0.18 + Math.sin(t * 0.7) * 0.015, 1.5, false, t, 1 + Math.sin(t * 1.3) * 0.3);
-        hand(v, ctx, POINT, cx + gap / 2, cy - 3, -0.28 + Math.sin(t * 0.6 + 1) * 0.015, 1.5, true, t, 1);
+        var gap = 6 + (1 - e) * 34 + Math.sin(t * 1.4) * 1;
+        var s = wide ? W / 200 : W / 100, cy = H * (wide ? 0.4 : 0.36);
+        ctx.save();
+        ctx.translate(W / 2, cy); ctx.scale(s, s);
+        var spark = ctx.createRadialGradient(0, 1, 0, 0, 1, 6 + Math.sin(t * 3.1) * 1.2);
+        spark.addColorStop(0, 'rgba(255,40,52,' + e + ')'); spark.addColorStop(0.35, 'rgba(255,40,52,' + (0.45 * e) + ')'); spark.addColorStop(1, 'rgba(255,40,52,0)');
+        ctx.fillStyle = spark; ctx.fillRect(-12, -11, 24, 24);
+        hand(ctx, LIMP, -gap / 2, 1, -0.16 + Math.sin(t * 0.7) * 0.012, 1.12, false, 1 + Math.sin(t * 1.1) * 0.12, t);
+        hand(ctx, REACH, gap / 2, 3, 0.04 + Math.sin(t * 0.6 + 1) * 0.012, 1.12, true, 1, t);
         ctx.restore();
       }
     };

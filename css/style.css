@@ -391,18 +391,49 @@ main {
   position: fixed;
   inset: 0;
   z-index: 69;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding-block: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-bottom, 0px));
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  overflow: hidden;
   background: #000;
   cursor: pointer;
 }
+.scream canvas.ascii { position: absolute; left: 0; top: 0; }
+/* the readout around the hands */
+.hud { position: absolute; pointer-events: none; }
+.hud-ring {
+  left: 50%;
+  top: 40%;
+  width: min(66vh, 58vw);
+  height: min(66vh, 58vw);
+  transform: translate(-50%, -50%);
+  overflow: visible;
+}
+.hud-ring circle { fill: none; stroke: rgba(232, 227, 218, 0.55); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+.hud-corner {
+  left: max(19vw, 150px);
+  top: 71%;
+  width: 34px;
+  height: 26px;
+  background:
+    linear-gradient(var(--bone), var(--bone)) top left / 9px 1px no-repeat,
+    linear-gradient(var(--bone), var(--bone)) top left / 1px 9px no-repeat,
+    linear-gradient(var(--bone), var(--bone)) top right / 9px 1px no-repeat,
+    linear-gradient(var(--bone), var(--bone)) top right / 1px 9px no-repeat,
+    linear-gradient(var(--bone), var(--bone)) bottom left / 9px 1px no-repeat,
+    linear-gradient(var(--bone), var(--bone)) bottom left / 1px 9px no-repeat,
+    linear-gradient(var(--bone), var(--bone)) bottom right / 9px 1px no-repeat,
+    linear-gradient(var(--bone), var(--bone)) bottom right / 1px 9px no-repeat;
+  opacity: 0.7;
+}
+.hud-log {
+  margin: 0;
+  font: 400 clamp(7px, 0.62vw, 10px)/1.45 var(--f-mono);
+  color: rgba(232, 227, 218, 0.62);
+  white-space: pre;
+}
+.hud-log-a { left: max(16px, 3vw); top: 73%; }
+.hud-log-b { left: 50%; top: 75%; transform: translateX(-12%); }
+.scream-words { position: absolute; left: 0; right: 0; top: 62%; display: flex; justify-content: center; padding-inline: 16px; }
 .scream[hidden] { display: none; }
-.scream canvas.ascii { width: min(1240px, 100%); cursor: pointer; will-change: transform; }
+.scream canvas.ascii { width: 100%; cursor: pointer; will-change: transform; }
 .scream-text { will-change: transform; transform-origin: 50% 50%; }
 .scream.on { animation: scream-in 0.35s steps(4) both; }
 .scream.out { opacity: 0; transition: opacity 0.45s ease; }
@@ -414,7 +445,7 @@ main {
 }
 .scream-text {
   position: relative;
-  margin: -0.3em 0 0;
+  margin: 0;
   max-width: 18ch;
   text-align: center;
   font: 900 clamp(1.9rem, 6.4vw, 5rem)/1.02 var(--f-serif);
@@ -639,6 +670,12 @@ main {
 @media (max-width: 820px) {
   .bloom-grid, .moon-grid, .write-grid, .void-grid { grid-template-columns: minmax(0, 1fr); }
   .see-under { margin-top: 12px; }
+}
+@media (max-width: 760px) {
+  .hud-log-b, .hud-corner { display: none; }
+  .hud-log-a { top: auto; bottom: max(16px, env(safe-area-inset-bottom, 0px)); font-size: 7px; }
+  .hud-ring { top: 36%; width: 86vw; height: 86vw; }
+  .scream-words { top: 56%; }
 }
 @media (max-width: 560px) {
   .bar-in { flex-wrap: wrap; gap: 6px 16px; }
