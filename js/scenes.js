@@ -844,9 +844,9 @@
     // one hand pointing right, wrist at (0, 0); each finger is three segments that bend from the knuckle
     var FINGERS = [
       { k: [8, -6], a: -0.75, l: [10, 9, 7], w: [6.6, 5.8, 5], b: [0.15, 0.2, 0.1], thumb: true },
-      { k: [25, 13], a: 0.4, l: [8, 6, 5], w: [4.2, 3.9, 3.5], b: [0.55, 0.75, 0.6] },
-      { k: [29, 8.5], a: 0.25, l: [11, 8, 6], w: [5, 4.6, 4.1], b: [0.5, 0.7, 0.6] },
-      { k: [31, 3], a: 0.12, l: [12, 9, 7], w: [5.3, 4.9, 4.4], b: [0.4, 0.6, 0.5] },
+      { k: [25, 13], a: 0.3, l: [8, 6, 5], w: [4.2, 3.9, 3.5], b: [0.75, 1.0, 0.8] },
+      { k: [29, 8.5], a: 0.2, l: [10, 7.5, 6], w: [5, 4.6, 4.1], b: [0.7, 0.95, 0.75] },
+      { k: [31, 3], a: 0.1, l: [11.5, 8.5, 6.5], w: [5.3, 4.9, 4.4], b: [0.6, 0.85, 0.7] },
       { k: [30, -3], a: -0.06, l: [14, 10, 8], w: [5.2, 4.8, 4.2], b: [0.03, 0.05, 0.04], index: true }
     ];
     function chain(f, curl, droop) {
@@ -858,47 +858,98 @@
       }
       return pts;
     }
-    function segments(ctx, pts, w, color, pad) {
-      ctx.strokeStyle = color;
-      for (var j = 0; j < 3; j++) {
-        ctx.lineWidth = w[j] + pad;
-        ctx.beginPath(); ctx.moveTo(pts[j][0], pts[j][1]); ctx.lineTo(pts[j + 1][0], pts[j + 1][1]); ctx.stroke();
+    // the normal of a segment that points to the top of the hand (local -y), where the light comes from
+    function upNormal(ax, ay, bx, by) {
+      var dx = bx - ax, dy = by - ay, dl = Math.sqrt(dx * dx + dy * dy) || 1, nx = dy / dl, ny = -dx / dl;
+      return ny > 0 ? [-nx, -ny] : [nx, ny];
+    }
+    // a tapered tube shaded like a lit cylinder: dark rim, body, light band and a thin highlight,
+    // each a little narrower and shifted toward the light
+    var LAYERS = [[1, 0, 0], [0.8, 0.08, 1], [0.46, 0.2, 2], [0.18, 0.3, 3]];
+    function tube(ctx, pts, ws, tone) {
+      for (var L = 0; L < LAYERS.length; L++) {
+        ctx.strokeStyle = tone[LAYERS[L][2]];
+        for (var j = 0; j + 1 < pts.length; j++) {
+          var ax = pts[j][0], ay = pts[j][1], bx = pts[j + 1][0], by = pts[j + 1][1];
+          var w = (ws[j] + ws[j + 1]) / 2, n = upNormal(ax, ay, bx, by), o = w * LAYERS[L][1];
+          ctx.lineWidth = w * LAYERS[L][0];
+          ctx.beginPath(); ctx.moveTo(ax + n[0] * o, ay + n[1] * o); ctx.lineTo(bx + n[0] * o, by + n[1] * o); ctx.stroke();
+        }
       }
+    }
+    var RIM = '#0a0908';
+    var TONE = {
+      index: [RIM, '#7a746c', '#bab3a8', '#f1ebe1'],
+      thumb: [RIM, '#68635c', '#a29b91', '#ddd6cb'],
+      curled: [RIM, '#4e4a45', '#837d74', '#b6afa4'],
+      arm: [RIM, '#3a3733', '#67625b', '#aaa398']
+    };
+    function finger(ctx, f, pts) {
+      var ws = [f.w[0], f.w[1], f.w[2], f.w[2] * 0.82];
+      tube(ctx, pts, ws, f.index ? TONE.index : f.thumb ? TONE.thumb : TONE.curled);
+      // creases across the two finger joints
+      ctx.strokeStyle = 'rgba(16,14,12,0.75)'; ctx.lineWidth = 0.38;
+      for (var j = 1; j <= 2; j++) {
+        var p = pts[j], n = upNormal(pts[j - 1][0], pts[j - 1][1], pts[j + 1][0], pts[j + 1][1]), w = ws[j];
+        ctx.beginPath(); ctx.moveTo(p[0] + n[0] * w * 0.42, p[1] + n[1] * w * 0.42);
+        ctx.quadraticCurveTo(p[0] + 0.5, p[1] + 0.2, p[0] - n[0] * w * 0.15, p[1] - n[1] * w * 0.15); ctx.stroke();
+      }
+      // the nail, on the top side of the last segment
+      var a = pts[2], b = pts[3], nn = upNormal(a[0], a[1], b[0], b[1]);
+      var len = Math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]));
+      var cx = a[0] + (b[0] - a[0]) * 0.68 + nn[0] * ws[2] * 0.16, cy = a[1] + (b[1] - a[1]) * 0.68 + nn[1] * ws[2] * 0.16;
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(Math.atan2(b[1] - a[1], b[0] - a[0]));
+      ctx.fillStyle = f.index ? '#efe9df' : '#bdb6ab'; ctx.strokeStyle = '#2a2724'; ctx.lineWidth = 0.3;
+      ctx.beginPath(); ctx.ellipse(0, 0, len * 0.24, ws[2] * 0.26, 0, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.restore();
     }
     function hand(ctx, tipX, tipY, angle, s, flip, curl, droop) {
       var chains = FINGERS.map(function (f) { return chain(f, curl, droop); });
-      var tip = chains[4][3];
+      var tip = chains[4][3], k;
       ctx.save();
       ctx.translate(tipX, tipY); ctx.rotate(angle); ctx.scale(s * (flip ? -1 : 1), s);
       ctx.translate(-tip[0], -tip[1]);
       ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-      // forearm, coming out of the dark
-      var g = ctx.createLinearGradient(-90, 0, 2, 0);
-      g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.6, '#3e3b38'); g.addColorStop(1, '#6e6a64');
-      ctx.fillStyle = g;
-      ctx.beginPath(); ctx.moveTo(-95, -7); ctx.quadraticCurveTo(-45, -8.5, 3, -7);
-      ctx.lineTo(4, 8); ctx.quadraticCurveTo(-45, 12, -95, 13); ctx.closePath(); ctx.fill();
-      var lg = ctx.createLinearGradient(-60, 0, 3, 0);
-      lg.addColorStop(0, 'rgba(236,230,220,0)'); lg.addColorStop(1, 'rgba(236,230,220,0.7)');
-      ctx.strokeStyle = lg; ctx.lineWidth = 0.9;
-      ctx.beginPath(); ctx.moveTo(-60, -7.6); ctx.quadraticCurveTo(-25, -7.8, 3, -7); ctx.stroke();
-      // palm
-      var pg = ctx.createRadialGradient(14, 2, 2, 16, 5, 20);
-      pg.addColorStop(0, '#9e988e'); pg.addColorStop(1, '#4e4a45');
-      ctx.fillStyle = pg;
-      ctx.beginPath(); ctx.ellipse(16, 5, 16, 11, 0.08, 0, TAU); ctx.fill();
-      // fingers: a dark rim first so neighbours stay apart, then the finger itself
-      for (var k = 0; k < 5; k++) {
-        var f = FINGERS[k], c = f.index ? '#cfc9bf' : f.thumb ? '#8e897f' : '#77726a';
-        segments(ctx, chains[k], f.w, '#000000', 2.4);
-        segments(ctx, chains[k], f.w, c, 0);
-        // a joint crease on each bent knuckle
-        if (!f.index) {
-          ctx.strokeStyle = 'rgba(20,18,16,0.6)'; ctx.lineWidth = 0.6;
-          var m = chains[k][1];
-          ctx.beginPath(); ctx.arc(m[0], m[1], f.w[0] * 0.35, 0, Math.PI); ctx.stroke();
-        }
+
+      // forearm: a shaded cylinder that dissolves into the dark
+      tube(ctx, [[-118, 2], [-70, 1.2], [-30, 0.5], [-1, 0.5]], [25, 23, 20, 17], TONE.arm);
+      var fade = ctx.createLinearGradient(-118, 0, -48, 0);
+      fade.addColorStop(0, 'rgba(0,0,0,1)'); fade.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = fade; ctx.fillRect(-122, -18, 76, 38);
+      ctx.strokeStyle = 'rgba(16,14,12,0.6)'; ctx.lineWidth = 0.4; // wrist creases
+      ctx.beginPath(); ctx.moveTo(-4, -7.5); ctx.quadraticCurveTo(-6, 1, -4, 9); ctx.stroke();
+
+      // fingers folded under the hand go first, so the palm covers where they start
+      for (k = 1; k <= 3; k++) finger(ctx, FINGERS[k], chains[k]);
+
+      // the hand itself, light on top and falling into shadow below
+      ctx.beginPath();
+      ctx.moveTo(-3, -8); ctx.quadraticCurveTo(12, -11.5, 24, -7.5); ctx.lineTo(31, -5.5);
+      ctx.quadraticCurveTo(35.5, 2, 33.5, 8.5); ctx.quadraticCurveTo(31, 14.5, 25.5, 17.5);
+      ctx.quadraticCurveTo(12, 15.5, -3, 10); ctx.closePath();
+      var hg = ctx.createLinearGradient(0, -11, 0, 17);
+      hg.addColorStop(0, '#c4bdb2'); hg.addColorStop(0.45, '#7f7971'); hg.addColorStop(1, '#24211e');
+      ctx.fillStyle = hg; ctx.fill();
+      ctx.strokeStyle = RIM; ctx.lineWidth = 0.9; ctx.stroke();
+      var sheen = ctx.createRadialGradient(15, -2, 0, 15, -2, 13);
+      sheen.addColorStop(0, 'rgba(236,230,220,0.45)'); sheen.addColorStop(1, 'rgba(236,230,220,0)');
+      ctx.fillStyle = sheen; ctx.fill();
+      // tendons fanning from the wrist to each knuckle, with the bumps of the knuckles
+      for (k = 1; k <= 4; k++) {
+        var kn = FINGERS[k].k;
+        ctx.strokeStyle = 'rgba(232,225,213,0.4)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(3, -2 + k * 1.6); ctx.quadraticCurveTo(16, kn[1] * 0.7 - 1, kn[0] - 2, kn[1] - 0.6); ctx.stroke();
+        ctx.strokeStyle = 'rgba(12,10,9,0.35)'; ctx.lineWidth = 0.5;
+        ctx.beginPath(); ctx.moveTo(3, -1 + k * 1.6); ctx.quadraticCurveTo(16, kn[1] * 0.7 + 0.2, kn[0] - 2, kn[1] + 0.6); ctx.stroke();
+        ctx.fillStyle = 'rgba(226,219,207,0.5)';
+        ctx.beginPath(); ctx.ellipse(kn[0] - 0.5, kn[1] - 0.8, 2.2, 1.4, 0, 0, TAU); ctx.fill();
       }
+
+      // the pad at the base of the thumb, then the thumb and the pointing finger on top
+      ctx.fillStyle = '#8b857c';
+      ctx.beginPath(); ctx.ellipse(8.5, -6, 8.5, 5.2, -0.5, 0, TAU); ctx.fill();
+      finger(ctx, FINGERS[0], chains[0]);
+      finger(ctx, FINGERS[4], chains[4]);
       ctx.restore();
     }
     return {

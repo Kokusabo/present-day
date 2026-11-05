@@ -693,12 +693,29 @@
   /* ---------- the hands (a secret) ---------- */
   function screamer() {
     var el = $('#scream'), view = null, busy = false, opened = 0, timers = [];
+    var pic = $('#cv-hands'), txt = el.querySelector('.scream-text'), words = txt.getAttribute('data-text');
+    var JUNK = '#$%&?!<>/\\|01_=+*~';
     function clear() { timers.forEach(clearTimeout); timers = []; }
+    // every 60-160 ms: jolt the picture, skew the words, swap a few letters for junk
+    function jolt() {
+      if (!busy) return;
+      pic.style.transform = Math.random() < 0.4 ? 'translate(' + rand(-12, 12).toFixed(1) + 'px,' + rand(-4, 4).toFixed(1) + 'px) skewX(' + rand(-6, 6).toFixed(1) + 'deg)' : '';
+      txt.style.transform = Math.random() < 0.5 ? 'translate(' + rand(-10, 10).toFixed(1) + 'px,' + rand(-3, 3).toFixed(1) + 'px) skewX(' + rand(-10, 10).toFixed(1) + 'deg)' : '';
+      if (Math.random() < 0.4) {
+        var chars = words.split(''), n = 1 + ((Math.random() * 5) | 0);
+        for (var i = 0; i < n; i++) { var k = (Math.random() * chars.length) | 0; if (chars[k] !== ' ') chars[k] = JUNK[(Math.random() * JUNK.length) | 0]; }
+        txt.textContent = chars.join('');
+        timers.push(setTimeout(function () { txt.textContent = words; }, rand(50, 110)));
+      }
+      if (view && Math.random() < 0.3) view.kick(rand(0.35, 1));
+      timers.push(setTimeout(jolt, rand(60, 160)));
+    }
+    function settle() { pic.style.transform = ''; txt.style.transform = ''; txt.textContent = words; }
     function close(force) {
       if (!busy || (force !== true && performance.now() - opened < 600)) return;
       clear();
       el.classList.add('out');
-      timers.push(setTimeout(function () { el.hidden = true; el.classList.remove('on', 'out'); busy = false; }, 450));
+      timers.push(setTimeout(function () { el.hidden = true; el.classList.remove('on', 'out'); busy = false; settle(); }, 450));
     }
     function open() {
       if (busy) return;
@@ -712,16 +729,18 @@
         if (!view) {
           scenes.hands = S.Hands();
           view = new A.AsciiView($('#cv-hands'), scenes.hands, {
-            mode: 'color', duo: DUO, cols: 200, colsNarrow: 110,
+            mode: 'color', duo: DUO, cols: 260, colsNarrow: 150,
             heightRatio: function (w) { return Math.min(w < 600 ? 0.75 : 0.6, window.innerHeight * 0.6 / w); },
-            gamma: 1.3, lumMix: 0.5, edges: true, edgeThresh: 0.16, jitter: 0.02, fps: 60
+            gamma: 1.15, lumMix: 0.4, edges: true, edgeThresh: 0.24, jitter: 0.015, fps: 60, heavyGlitch: true
           });
         } else view.resize();
         scenes.hands.state.t0 = view.t;
         view.kick(1);
       });
       Sound.crackle();
-      timers.push(setTimeout(function () { if (view) view.kick(0.9); Sound.crackle(); }, 2000));
+      if (!reduced) timers.push(setTimeout(jolt, 120));
+      timers.push(setTimeout(function () { if (view) view.kick(1); Sound.crackle(); }, 1500));
+      timers.push(setTimeout(function () { if (view) view.kick(0.9); Sound.crackle(); }, 2300));
       timers.push(setTimeout(function () { close(true); }, 3000));
     }
     el.addEventListener('pointerdown', close);

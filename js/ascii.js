@@ -93,6 +93,7 @@
     lumMix: 0,            // 0 = luma, 1 = brightest channel (lets saturated colours stay dense)
     fillDim: 0,           // colour mode: dim the fill characters so inked lines stand out
     duo: null,            // colour mode: [base, accent] - every cell becomes a shade of base, or accent where the scene is red
+    heavyGlitch: false,   // glitches also corrupt blocks of characters and leave red/bone ghosts
     inkTint: null,        // mono mode: colour for inked lines (drawn in a second pass)
     jitter: 0.02,
     fps: 60,
@@ -392,6 +393,28 @@
       this.shift[y] = g > 0 && Math.random() < g * 0.22 ? (Math.random() - 0.5) * g * 14 * this.cellW : 0;
     }
 
+    // heavy glitch: tear whole bands sideways and overwrite random blocks with junk
+    var heavy = o.heavyGlitch && g > 0.05;
+    if (heavy) {
+      var bands = 1 + ((Math.random() * g * 4) | 0);
+      for (var bnd = 0; bnd < bands; bnd++) {
+        var by = (Math.random() * rows) | 0, bh = 1 + ((Math.random() * Math.max(1, rows * 0.12 * g)) | 0);
+        var bs = (Math.random() - 0.5) * g * 40 * this.cellW;
+        for (var yb = by; yb < Math.min(rows, by + bh); yb++) this.shift[yb] = bs;
+      }
+      var blocks = (Math.random() * g * 7) | 0;
+      for (var bk = 0; bk < blocks; bk++) {
+        var bx = (Math.random() * cols) | 0, bw = 4 + ((Math.random() * 30 * g) | 0);
+        var y0 = (Math.random() * rows) | 0, h0 = 1 + ((Math.random() * 3) | 0);
+        var junk = Math.random() < 0.5 ? GLITCH[(Math.random() * GLITCH.length) | 0] : '';
+        for (var yk = y0; yk < Math.min(rows, y0 + h0); yk++) {
+          var row = lines[yk], seg = '';
+          for (var xk = 0; xk < bw && bx + xk < cols; xk++) seg += junk || GLITCH[(Math.random() * GLITCH.length) | 0];
+          lines[yk] = row.slice(0, bx) + seg + row.slice(bx + seg.length);
+        }
+      }
+    }
+
     var ctx = this.ctx;
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     ctx.globalCompositeOperation = 'source-over';
@@ -413,6 +436,17 @@
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(this.col, 0, 0, cols, rows, this.ox, 0, cols * this.cellW, rows * ch);
       ctx.globalCompositeOperation = 'source-over';
+    }
+    if (heavy) {
+      // colour ghosts: a red copy to one side and a pale copy to the other, on some rows only
+      var dx = (2 + g * 7) * this.cellW;
+      ctx.globalAlpha = Math.min(0.75, 0.25 + g * 0.6);
+      ctx.fillStyle = '#e3182d';
+      for (yy = 0; yy < rows; yy++) if (Math.random() < 0.35 + g * 0.4) ctx.fillText(lines[yy], this.ox + this.shift[yy] - dx, (yy + 0.5) * ch);
+      ctx.globalAlpha = Math.min(0.4, 0.1 + g * 0.3);
+      ctx.fillStyle = '#e8e3da';
+      for (yy = 0; yy < rows; yy++) if (Math.random() < 0.2 + g * 0.3) ctx.fillText(lines[yy], this.ox + this.shift[yy] + dx * 0.6, (yy + 0.5) * ch);
+      ctx.globalAlpha = 1;
     }
   };
 
