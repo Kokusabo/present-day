@@ -211,21 +211,117 @@
       analyser.getByteFrequencyData(bins);
       return bins;
     }
-    // a short burst of static, for the hands
-    function crackle() {
+    /* ---------- glitch sounds ----------
+     * Built sample by sample, so they are hard-edged and digital: broken data, a TV losing
+     * its signal, a cassette being chewed and stopping. Each call makes a new random take. */
+    var TAU = Math.PI * 2;
+    function buffer(dur, fill) {
       var a = ctx();
-      if (!a) return;
-      var src = a.createBufferSource(), bp = a.createBiquadFilter(), g = a.createGain(), now = a.currentTime;
-      src.buffer = noise();
-      bp.type = 'bandpass'; bp.frequency.value = 2400; bp.Q.value = 0.6;
-      g.gain.setValueAtTime(0.0001, now);
-      g.gain.exponentialRampToValueAtTime(0.14, now + 0.02);
-      g.gain.setValueAtTime(0.14, now + 0.18);
-      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
-      src.connect(bp); bp.connect(g); g.connect(master);
-      src.start(now, Math.random()); src.stop(now + 0.55);
+      if (!a) return null;
+      var sr = a.sampleRate, n = Math.max(1, Math.round(dur * sr)), b = a.createBuffer(1, n, sr), d = b.getChannelData(0);
+      fill(d, sr, n);
+      var f = Math.min(n, Math.round(sr * 0.004)); // 4 ms fades at both ends so nothing clicks by accident
+      for (var i = 0; i < f; i++) { d[i] *= i / f; d[n - 1 - i] *= i / f; }
+      return b;
     }
-    return { unlock: ctx, humStart: humStart, humStop: humStop, play: play, stop: stop, spectrum: spectrum, crackle: crackle, TRACKS: TRACKS };
+    function send(buf, gain, delay) {
+      if (!buf) return;
+      var src = ac.createBufferSource(), g = ac.createGain();
+      src.buffer = buf; g.gain.value = gain;
+      src.connect(g); g.connect(master);
+      src.start(ac.currentTime + (delay || 0));
+    }
+    // broken data: slices of square wave, noise and chirps at low bit depth, some slices repeated
+    function data(dur) {
+      return buffer(dur, function (d, sr, n) {
+        var i = 0, last = null;
+        while (i < n) {
+          var seg;
+          if (last && Math.random() < 0.45) seg = last;               // the same slice again: a stutter
+          else {
+            var len = Math.round(sr * (0.01 + Math.random() * 0.045)), kind = Math.random();
+            var f = 110 * Math.pow(2, Math.random() * 5.5), hold = 1 << (1 + ((Math.random() * 4) | 0));
+            var q = Math.pow(2, 2 + ((Math.random() * 3) | 0)), v = 0;
+            seg = new Float32Array(len);
+            for (var k = 0; k < len; k++) {
+              if (k % hold === 0) {                                     // sample and hold: aliasing crunch
+                if (kind < 0.45) v = ((k * f / sr) % 1) < 0.5 ? 0.8 : -0.8;
+                else if (kind < 0.8) v = Math.random() * 1.6 - 0.8;
+                else v = 0.8 * Math.sin(TAU * f * (k / sr) * (1 + 2 * k / len));
+                v = Math.round(v * q) / q;                              // fewer bits
+              }
+              seg[k] = kind > 0.94 ? 0 : v;                             // or a dropout
+            }
+            last = seg;
+          }
+          for (var j = 0; j < seg.length && i < n; j++, i++) d[i] = seg[j];
+        }
+      });
+    }
+    // a TV losing the picture: chopped white noise and the buzz of the frame rate
+    function tv(dur) {
+      return buffer(dur, function (d, sr, n) {
+        var gate = 1, next = 0, prev = 0;
+        for (var i = 0; i < n; i++) {
+          if (i >= next) {
+            gate = Math.random() < 0.22 ? 0.08 : 0.55 + Math.random() * 0.45;
+            next = i + Math.round(sr * (0.006 + Math.random() * 0.03));
+          }
+          var w = Math.random() * 2 - 1, hiss = w - prev; prev = w;
+          var t = i / sr, buzz = ((t * 50) % 1) * 2 - 1;               // 50 Hz saw: the field buzz
+          d[i] = (hiss * 0.32 + w * 0.22 + buzz * 0.16) * gate;
+        }
+      });
+    }
+    // a cassette: a chord that wobbles and drops out (chew), or slows down to nothing (stop)
+    function tape(dur, stop) {
+      return buffer(dur, function (d, sr, n) {
+        var fr = [220, 261.6, 329.6, 440], ph = [0, 0, 0, 0], lp = 0, drop = 1, dropS = 1, next = 0;
+        for (var i = 0; i < n; i++) {
+          var t = i / sr, p = i / n;
+          var speed = stop ? Math.pow(1 - p, 1.7)
+            : 1 + 0.07 * Math.sin(TAU * 1.4 * t) + 0.03 * Math.sin(TAU * 7.3 * t) + (Math.random() - 0.5) * 0.006;
+          var sum = 0;
+          for (var k = 0; k < 4; k++) {
+            ph[k] = (ph[k] + fr[k] * speed / sr) % 1;
+            sum += (Math.abs(ph[k] * 4 - 2) - 1) * (k === 3 ? 0.35 : 0.6);  // triangles
+          }
+          var cut = Math.min(0.6, 0.03 + 0.45 * speed);              // slower tape, duller sound
+          lp += (sum - lp) * cut;
+          if (!stop && i >= next) {
+            drop = Math.random() < 0.25 ? 0.1 : 1;
+            next = i + Math.round(sr * (0.015 + Math.random() * 0.07));
+          }
+          dropS += (drop - dropS) * 0.02;
+          var hiss = (Math.random() * 2 - 1) * 0.05;
+          d[i] = (lp * 0.32 * dropS + hiss) * (stop ? Math.min(1, speed * 3) : 1);
+        }
+      });
+    }
+    // the click of a channel switch: a tick and a low thump
+    function pop() {
+      return buffer(0.09, function (d, sr, n) {
+        for (var i = 0; i < n; i++) {
+          var t = i / sr;
+          d[i] = (i < sr * 0.0015 ? Math.random() * 1.6 - 0.8 : 0) + Math.exp(-t * 60) * Math.sin(TAU * 62 * t) * 0.7;
+        }
+      });
+    }
+    var lastBlip = 0;
+    var glitch = {
+      open: function () { if (!ctx()) return; send(pop(), 0.6); send(tv(0.32), 0.5); send(data(0.24), 0.32, 0.05); },
+      chew: function () { if (!ctx()) return; send(tape(0.5, false), 0.6); send(tv(0.12), 0.35); },
+      burst: function () { if (!ctx()) return; send(data(0.22), 0.32); send(tv(0.18), 0.4, 0.06); },
+      close: function () { if (!ctx()) return; send(tape(0.42, true), 0.6); send(pop(), 0.5, 0.4); },
+      // short blips that go with the picture jumping; never closer than 170 ms
+      blip: function () {
+        var now = performance.now();
+        if (!ac || now - lastBlip < 170) return;
+        lastBlip = now;
+        send(Math.random() < 0.7 ? data(0.04 + Math.random() * 0.1) : tv(0.05 + Math.random() * 0.06), 0.24);
+      }
+    };
+    return { unlock: ctx, humStart: humStart, humStop: humStop, play: play, stop: stop, spectrum: spectrum, glitch: glitch, TRACKS: TRACKS };
   })();
 
   function humToggle() {
@@ -751,7 +847,7 @@
         h.style.visibility = Math.random() < 0.14 ? 'hidden' : '';
         h.style.translate = Math.random() < 0.25 ? rand(-24, 24).toFixed(0) + 'px ' + rand(-6, 6).toFixed(0) + 'px' : '';
       });
-      if (view && Math.random() < 0.55) view.kick(rand(0.5, 1));
+      if (view && Math.random() < 0.55) { view.kick(rand(0.5, 1)); if (Math.random() < 0.5) Sound.glitch.blip(); }
       timers.push(setTimeout(jolt, rand(55, 150)));
     }
     function settle() {
@@ -762,6 +858,7 @@
     function close(force) {
       if (!busy || (force !== true && performance.now() - opened < 600)) return;
       clear();
+      Sound.glitch.close();
       el.classList.add('out');
       timers.push(setTimeout(function () { el.hidden = true; el.classList.remove('on', 'out'); busy = false; settle(); }, 450));
     }
@@ -786,10 +883,10 @@
         scenes.hands.state.t0 = view.t;
         view.kick(1);
       });
-      Sound.crackle();
+      Sound.glitch.open();
       if (!reduced) timers.push(setTimeout(jolt, 120));
-      timers.push(setTimeout(function () { if (view) view.kick(1); Sound.crackle(); }, 1500));
-      timers.push(setTimeout(function () { if (view) view.kick(0.9); Sound.crackle(); }, 2300));
+      timers.push(setTimeout(function () { if (view) view.kick(1); Sound.glitch.chew(); }, 1400));
+      timers.push(setTimeout(function () { if (view) view.kick(0.9); Sound.glitch.burst(); }, 2250));
       timers.push(setTimeout(function () { close(true); }, 3000));
     }
     el.addEventListener('pointerdown', close);
