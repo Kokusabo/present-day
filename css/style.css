@@ -403,7 +403,7 @@ main {
 }
 .scream[hidden] { display: none; }
 .scream canvas.ascii { width: min(1240px, 100%); cursor: pointer; will-change: transform; }
-.scream-text { will-change: transform; }
+.scream-text { will-change: transform; transform-origin: 50% 50%; }
 .scream.on { animation: scream-in 0.35s steps(4) both; }
 .scream.out { opacity: 0; transition: opacity 0.45s ease; }
 @keyframes scream-in {

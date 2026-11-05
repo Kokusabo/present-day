@@ -697,20 +697,41 @@
     var JUNK = '#$%&?!<>/\\|01_=+*~';
     function clear() { timers.forEach(clearTimeout); timers = []; }
     // every 60-160 ms: jolt the picture, skew the words, swap a few letters for junk
+    var SIZES = [0.45, 0.6, 0.8, 1, 1, 1.25, 1.55, 1.9];
+    var CUTS = [
+      'inset(0 0 46% 0)', 'inset(38% 0 0 0)', 'inset(0 52% 0 0)', 'inset(0 0 0 48%)',
+      'polygon(0 0,100% 0,100% 30%,0 30%,0 62%,100% 62%,100% 100%,0 100%)',
+      'polygon(0 0,100% 0,100% 52%,0 52%,0 78%,100% 78%,100% 100%,0 100%)',
+      'polygon(0 0,38% 0,38% 100%,0 100%)'
+    ];
+    function pick(a) { return a[(Math.random() * a.length) | 0]; }
     function jolt() {
       if (!busy) return;
-      pic.style.transform = Math.random() < 0.4 ? 'translate(' + rand(-12, 12).toFixed(1) + 'px,' + rand(-4, 4).toFixed(1) + 'px) skewX(' + rand(-6, 6).toFixed(1) + 'deg)' : '';
-      txt.style.transform = Math.random() < 0.5 ? 'translate(' + rand(-10, 10).toFixed(1) + 'px,' + rand(-3, 3).toFixed(1) + 'px) skewX(' + rand(-10, 10).toFixed(1) + 'deg)' : '';
-      if (Math.random() < 0.4) {
+      var r = Math.random();
+      // the picture: thrown sideways, zoomed, and sometimes a big piece cut away
+      if (r < 0.55) {
+        pic.style.transform = 'translate(' + rand(-7, 7).toFixed(1) + 'vw,' + rand(-2.5, 2.5).toFixed(1) + 'vh) scale(' + rand(0.9, 1.16).toFixed(2) + ') skewX(' + rand(-9, 9).toFixed(1) + 'deg)';
+      } else pic.style.transform = '';
+      pic.style.clipPath = Math.random() < 0.3 ? pick(CUTS) : '';
+      pic.style.filter = Math.random() < 0.25 ? 'drop-shadow(-' + rand(6, 18).toFixed(0) + 'px 0 #e3182d) drop-shadow(' + rand(4, 12).toFixed(0) + 'px 0 rgba(232,227,218,0.45))' : '';
+      // the words: much bigger, much smaller, stretched, thrown, now and then gone for a moment
+      var size = pick(SIZES), sx = Math.random() < 0.3 ? rand(1.3, 2.4) : 1, sy = sx > 1 ? rand(0.45, 0.8) : 1;
+      txt.style.transform = 'translate(' + rand(-9, 9).toFixed(1) + 'vw,' + rand(-5, 5).toFixed(1) + 'vh) scale(' + (size * sx).toFixed(2) + ',' + (size * sy).toFixed(2) + ') skewX(' + rand(-16, 16).toFixed(1) + 'deg)';
+      txt.style.letterSpacing = Math.random() < 0.25 ? rand(-0.08, 0.4).toFixed(2) + 'em' : '';
+      txt.style.visibility = Math.random() < 0.08 ? 'hidden' : '';
+      if (Math.random() < 0.5) {
         var chars = words.split(''), n = 1 + ((Math.random() * 5) | 0);
         for (var i = 0; i < n; i++) { var k = (Math.random() * chars.length) | 0; if (chars[k] !== ' ') chars[k] = JUNK[(Math.random() * JUNK.length) | 0]; }
         txt.textContent = chars.join('');
         timers.push(setTimeout(function () { txt.textContent = words; }, rand(50, 110)));
       }
-      if (view && Math.random() < 0.3) view.kick(rand(0.35, 1));
-      timers.push(setTimeout(jolt, rand(60, 160)));
+      if (view && Math.random() < 0.55) view.kick(rand(0.5, 1));
+      timers.push(setTimeout(jolt, rand(55, 150)));
     }
-    function settle() { pic.style.transform = ''; txt.style.transform = ''; txt.textContent = words; }
+    function settle() {
+      pic.style.transform = ''; pic.style.clipPath = ''; pic.style.filter = '';
+      txt.style.transform = ''; txt.style.letterSpacing = ''; txt.style.visibility = ''; txt.textContent = words;
+    }
     function close(force) {
       if (!busy || (force !== true && performance.now() - opened < 600)) return;
       clear();
@@ -729,9 +750,9 @@
         if (!view) {
           scenes.hands = S.Hands();
           view = new A.AsciiView($('#cv-hands'), scenes.hands, {
-            mode: 'color', duo: DUO, cols: 260, colsNarrow: 150,
+            mode: 'color', duo: DUO, cols: 260, colsNarrow: 170, rampLevels: 48, ss: 1,
             heightRatio: function (w) { return Math.min(w < 600 ? 0.75 : 0.6, window.innerHeight * 0.6 / w); },
-            gamma: 1.15, lumMix: 0.4, edges: true, edgeThresh: 0.24, jitter: 0.015, fps: 60, heavyGlitch: true
+            gamma: 1, lumMix: 0.2, edges: false, jitter: 0.06, fps: 60, heavyGlitch: true
           });
         } else view.resize();
         scenes.hands.state.t0 = view.t;

@@ -29,8 +29,9 @@
   /* pick characters by how much ink they really put on screen in this font */
   var rampCache = {};
   var CANDIDATES = " .'`,:;~\"!^*+=<>ivxrclzunosaeyftjJLTYCUOQ0Z?mwqpdbkhXKAVNSGEHRD#%&8BM@$";
-  function autoRamp(weight, family) {
-    var key = weight + ' ' + family;
+  function autoRamp(weight, family, levels) {
+    levels = levels || 30;
+    var key = weight + ' ' + family + ' ' + levels;
     if (rampCache[key]) return rampCache[key];
     var size = 40, c = document.createElement('canvas');
     c.width = size; c.height = Math.round(size * 1.3);
@@ -47,7 +48,7 @@
       list.push([CANDIDATES[i], sum]);
     }
     list.sort(function (a, b) { return a[1] - b[1]; });
-    var max = list[list.length - 1][1] || 1, out = ' ', levels = 30;
+    var max = list[list.length - 1][1] || 1, out = ' ';
     for (var k = 1; k < levels; k++) {
       var target = k / (levels - 1) * max, best = '', bd = 1e18;
       for (var m = 1; m < list.length; m++) {
@@ -192,7 +193,7 @@
     var cssH = Math.round(rows * ch);
     var dpr = Math.min(maxDpr, global.devicePixelRatio || 1);
 
-    this.ramp = o.ramp === 'auto' ? autoRamp(o.weight, o.family) : o.ramp;
+    this.ramp = o.ramp === 'auto' ? autoRamp(o.weight, o.family, o.rampLevels) : o.ramp;
     this.duo = o.duo ? [rgbOf(o.duo[0]), rgbOf(o.duo[1])] : null;
     this.ss = Math.max(1, o.ss | 0);
     this.fs = fs; this.cellW = cw; this.cellH = ch;
@@ -354,7 +355,7 @@
         }
         if (!c) {
           var v = gamma === 1 ? L[idx] : Math.pow(L[idx], gamma);
-          if (jit) {
+          if (jit && v > 0.02) { // grain only where something is drawn, never on the black
             var hn = Math.imul(idx ^ jseed, 0x85ebca6b); hn ^= hn >>> 13; hn = Math.imul(hn, 0xc2b2ae35); hn ^= hn >>> 16;
             v += ((hn >>> 0) / 4294967296 - 0.5) * jit;
           }
@@ -393,25 +394,74 @@
       this.shift[y] = g > 0 && Math.random() < g * 0.22 ? (Math.random() - 0.5) * g * 14 * this.cellW : 0;
     }
 
-    // heavy glitch: tear whole bands sideways and overwrite random blocks with junk
+    // heavy glitch: big pieces of the picture slide away, jump up or down, or vanish;
+    // characters and their colours move together
     var heavy = o.heavyGlitch && g > 0.05;
     if (heavy) {
-      var bands = 1 + ((Math.random() * g * 4) | 0);
-      for (var bnd = 0; bnd < bands; bnd++) {
-        var by = (Math.random() * rows) | 0, bh = 1 + ((Math.random() * Math.max(1, rows * 0.12 * g)) | 0);
-        var bs = (Math.random() - 0.5) * g * 40 * this.cellW;
-        for (var yb = by; yb < Math.min(rows, by + bh); yb++) this.shift[yb] = bs;
-      }
-      var blocks = (Math.random() * g * 7) | 0;
-      for (var bk = 0; bk < blocks; bk++) {
-        var bx = (Math.random() * cols) | 0, bw = 4 + ((Math.random() * 30 * g) | 0);
-        var y0 = (Math.random() * rows) | 0, h0 = 1 + ((Math.random() * 3) | 0);
-        var junk = Math.random() < 0.5 ? GLITCH[(Math.random() * GLITCH.length) | 0] : '';
-        for (var yk = y0; yk < Math.min(rows, y0 + h0); yk++) {
-          var row = lines[yk], seg = '';
-          for (var xk = 0; xk < bw && bx + xk < cols; xk++) seg += junk || GLITCH[(Math.random() * GLITCH.length) | 0];
-          lines[yk] = row.slice(0, bx) + seg + row.slice(bx + seg.length);
+      var rc = [], rnd = Math.random;
+      var chars = function (y) { return rc[y] || (rc[y] = lines[y].split('')); };
+      var copyCells = function (y, x0, w) { // characters and colours of one row segment
+        var c = chars(y).slice(x0, x0 + w), px = color ? out.slice((y * cols + x0) * 4, (y * cols + x0 + w) * 4) : null;
+        return [c, px];
+      };
+      var pasteCells = function (y, x0, cell) {
+        var row = chars(y), c = cell[0];
+        for (var k = 0; k < c.length; k++) {
+          var x = x0 + k;
+          if (x < 0 || x >= cols) continue;
+          row[x] = c[k];
+          if (color) { var d = (y * cols + x) * 4, sIdx = k * 4; out[d] = cell[1][sIdx]; out[d + 1] = cell[1][sIdx + 1]; out[d + 2] = cell[1][sIdx + 2]; }
         }
+      };
+      var blank = function (y, x0, w) { var row = chars(y); for (var x = Math.max(0, x0); x < Math.min(cols, x0 + w); x++) row[x] = ' '; };
+
+      var pieces = 1 + ((rnd() * (1 + g * 4)) | 0);
+      for (var pc = 0; pc < pieces; pc++) {
+        var pw = Math.max(6, (cols * (0.12 + rnd() * 0.55 * g)) | 0), ph = Math.max(1, (rows * (0.05 + rnd() * 0.35 * g)) | 0);
+        var px0 = (rnd() * (cols - pw)) | 0, py0 = (rnd() * (rows - ph)) | 0, kind = rnd(), yy0;
+        if (kind < 0.3) {
+          for (yy0 = py0; yy0 < py0 + ph; yy0++) blank(yy0, px0, pw);           // gone
+        } else if (kind < 0.75) {
+          var sdx = Math.round((rnd() < 0.5 ? -1 : 1) * cols * (0.05 + rnd() * 0.3 * g));
+          for (yy0 = py0; yy0 < py0 + ph; yy0++) {                                // slides sideways
+            var seg = copyCells(yy0, px0, pw);
+            blank(yy0, px0, pw);
+            pasteCells(yy0, px0 + sdx, seg);
+          }
+        } else {
+          var sdy = Math.round((rnd() < 0.5 ? -1 : 1) * rows * (0.08 + rnd() * 0.3 * g));
+          var moved = [];
+          for (yy0 = py0; yy0 < py0 + ph; yy0++) moved.push(copyCells(yy0, px0, pw));
+          if (rnd() < 0.6) for (yy0 = py0; yy0 < py0 + ph; yy0++) blank(yy0, px0, pw);
+          for (var mi = 0; mi < moved.length; mi++) {                             // jumps up or down
+            var ty = py0 + mi + sdy;
+            if (ty >= 0 && ty < rows) pasteCells(ty, px0, moved[mi]);
+          }
+        }
+      }
+      // a band of dropped scanlines
+      if (rnd() < 0.25 * g) {
+        var dy0 = (rnd() * rows) | 0, dh = (rows * (0.1 + rnd() * 0.3)) | 0, step = rnd() < 0.5 ? 2 : 3;
+        for (var dyy = dy0; dyy < Math.min(rows, dy0 + dh); dyy++) if (dyy % step === 0) blank(dyy, 0, cols);
+      }
+      // junk where the signal broke
+      var blocks = (rnd() * g * 6) | 0;
+      for (var bk = 0; bk < blocks; bk++) {
+        var bx = (rnd() * cols) | 0, bw = 4 + ((rnd() * 40 * g) | 0);
+        var y0 = (rnd() * rows) | 0, h0 = 1 + ((rnd() * 3) | 0);
+        var junk = rnd() < 0.5 ? GLITCH[(rnd() * GLITCH.length) | 0] : '';
+        for (var yk = y0; yk < Math.min(rows, y0 + h0); yk++) {
+          var jr = chars(yk);
+          for (var xk = 0; xk < bw && bx + xk < cols; xk++) jr[bx + xk] = junk || GLITCH[(rnd() * GLITCH.length) | 0];
+        }
+      }
+      for (var ry in rc) lines[ry] = rc[ry].join('');
+      // whole bands torn sideways at draw time
+      var bands = 1 + ((rnd() * g * 4) | 0);
+      for (var bnd = 0; bnd < bands; bnd++) {
+        var by = (rnd() * rows) | 0, bh = 1 + ((rnd() * Math.max(1, rows * 0.25 * g)) | 0);
+        var bs = (rnd() - 0.5) * g * 90 * this.cellW;
+        for (var yb = by; yb < Math.min(rows, by + bh); yb++) this.shift[yb] = bs;
       }
     }
 
@@ -442,10 +492,12 @@
       var dx = (2 + g * 7) * this.cellW;
       ctx.globalAlpha = Math.min(0.75, 0.25 + g * 0.6);
       ctx.fillStyle = '#e3182d';
-      for (yy = 0; yy < rows; yy++) if (Math.random() < 0.35 + g * 0.4) ctx.fillText(lines[yy], this.ox + this.shift[yy] - dx, (yy + 0.5) * ch);
-      ctx.globalAlpha = Math.min(0.4, 0.1 + g * 0.3);
-      ctx.fillStyle = '#e8e3da';
-      for (yy = 0; yy < rows; yy++) if (Math.random() < 0.2 + g * 0.3) ctx.fillText(lines[yy], this.ox + this.shift[yy] + dx * 0.6, (yy + 0.5) * ch);
+      for (yy = 0; yy < rows; yy++) if (lines[yy].trim() && Math.random() < 0.2 + g * 0.3) ctx.fillText(lines[yy], this.ox + this.shift[yy] - dx, (yy + 0.5) * ch);
+      if (g > 0.6) {
+        ctx.globalAlpha = Math.min(0.4, 0.1 + g * 0.3);
+        ctx.fillStyle = '#e8e3da';
+        for (yy = 0; yy < rows; yy++) if (lines[yy].trim() && Math.random() < 0.12) ctx.fillText(lines[yy], this.ox + this.shift[yy] + dx * 0.6, (yy + 0.5) * ch);
+      }
       ctx.globalAlpha = 1;
     }
   };
