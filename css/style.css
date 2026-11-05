@@ -400,16 +400,16 @@ main {
 .hud { position: absolute; pointer-events: none; }
 .hud-ring {
   left: 50%;
-  top: 40%;
-  width: min(66vh, 58vw);
-  height: min(66vh, 58vw);
+  top: 37%;
+  width: min(64vh, 56vw);
+  height: min(64vh, 56vw);
   transform: translate(-50%, -50%);
   overflow: visible;
 }
 .hud-ring circle { fill: none; stroke: rgba(232, 227, 218, 0.55); stroke-width: 1px; vector-effect: non-scaling-stroke; }
 .hud-corner {
   left: max(19vw, 150px);
-  top: 71%;
+  top: 81%;
   width: 34px;
   height: 26px;
   background:
@@ -429,9 +429,9 @@ main {
   color: rgba(232, 227, 218, 0.62);
   white-space: pre;
 }
-.hud-log-a { left: max(16px, 3vw); top: 73%; }
-.hud-log-b { left: 50%; top: 75%; transform: translateX(-12%); }
-.scream-words { position: absolute; left: 0; right: 0; top: 62%; display: flex; justify-content: center; padding-inline: 16px; }
+.hud-log-a { left: max(16px, 3vw); top: 83%; }
+.hud-log-b { left: 35%; top: 84%; }
+.scream-words { position: absolute; left: 0; right: 0; top: 71%; display: flex; justify-content: center; padding-inline: 16px; }
 .scream[hidden] { display: none; }
 .scream canvas.ascii { width: 100%; cursor: pointer; will-change: transform; }
 .scream-text { will-change: transform; transform-origin: 50% 50%; }
@@ -448,7 +448,7 @@ main {
   margin: 0;
   max-width: 18ch;
   text-align: center;
-  font: 900 clamp(1.9rem, 6.4vw, 5rem)/1.02 var(--f-serif);
+  font: 900 clamp(1.9rem, 6.4vw, 4.2rem)/1.02 var(--f-serif);
   letter-spacing: -0.01em;
   color: var(--white);
   text-wrap: balance;
@@ -674,8 +674,8 @@ main {
 @media (max-width: 760px) {
   .hud-log-b, .hud-corner { display: none; }
   .hud-log-a { top: auto; bottom: max(16px, env(safe-area-inset-bottom, 0px)); font-size: 7px; }
-  .hud-ring { top: 36%; width: 86vw; height: 86vw; }
-  .scream-words { top: 56%; }
+  .hud-ring { top: 33%; width: 86vw; height: 86vw; }
+  .scream-words { top: 52%; }
 }
 @media (max-width: 560px) {
   .bar-in { flex-wrap: wrap; gap: 6px 16px; }

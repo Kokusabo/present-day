@@ -699,19 +699,19 @@
     function hex2(n) { return pad(n.toString(16), 2); }
     function fillLogs() {
       var d = new Date(), day = pad(d.getMonth() + 1, 2) + '/' + pad(d.getDate(), 2) + '/' + d.getFullYear(), a = [], b = [], i, j;
-      a.push('> recv ch.07 // ' + day, '> origin: unknown   ttl: --', '');
-      for (i = 0; i < 6; i++) {
+      a.push('> recv ch.07 // ' + day, '> origin: unknown   ttl: --');
+      for (i = 0; i < 4; i++) {
         var row = pad((i * 16).toString(16), 4) + '  ';
         for (j = 0; j < 8; j++) row += hex2((Math.random() * 256) | 0) + ' ';
         a.push(row + ' ' + (Math.random() < 0.3 ? 'ERR' : 'ok'));
       }
-      a.push('', '> checksum ........ ' + hex2((Math.random() * 256) | 0) + hex2((Math.random() * 256) | 0), '> 2 hands found');
-      var files = ['eye_01.raw', 'higanbana.txt', 'moon.raw', 'block9.log', 'heaven.box', 'one.txt', 'you.txt', 'ch07.wav', 'touch.sys'];
+      a.push('> checksum ........ ' + hex2((Math.random() * 256) | 0) + hex2((Math.random() * 256) | 0), '> 2 hands found');
+      var files = ['eye_01.raw', 'higanbana.txt', 'moon.raw', 'heaven.box', 'one.txt', 'hands.txt'];
       for (i = 0; i < files.length; i++) {
         var tm = new Date(d - (files.length - i) * 4321);
         b.push(day + '  ' + pad(tm.getHours(), 2) + ':' + pad(tm.getMinutes(), 2) + ':' + pad(tm.getSeconds(), 2) + '   ' + (files[i] + '            ').slice(0, 14) + (Math.random() * 9 + 0.4).toFixed(1) + 'kb');
       }
-      b.push('', '1 file waiting. 0 replies.');
+      b.push('1 file waiting. 0 replies.');
       $('#hud-a').textContent = a.join('\n');
       $('#hud-b').textContent = b.join('\n');
     }
