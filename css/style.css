@@ -685,11 +685,6 @@ main {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* the glitches stay (they are the point of the site); only scrolling jumps instead of gliding */
   html { scroll-behavior: auto; }
-  /* calm mode: the pictures still move gently (see ascii.js), only flicker and flashes stop */
-  .glitches span { animation: none; }
-  .scream.on, .scream.on .scream-text { animation: none; }
-  .scream-text::before, .scream-text::after { display: none; }
-  .laugh { display: none; }
-  .heaven-light, .heaven-light.on { transition: none; }
 }

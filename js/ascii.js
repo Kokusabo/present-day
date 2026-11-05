@@ -232,7 +232,6 @@
   };
 
   AsciiView.prototype.kick = function (amount) {
-    if (reduced) return; // no glitch flashes for people who asked their system for less motion
     this.glitch = Math.max(this.glitch, amount || 0.6);
     this.dirty = true;
   };

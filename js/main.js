@@ -46,7 +46,6 @@
       setTimeout(function () { el.classList.add('gone'); }, 600);
       window.removeEventListener('keydown', finish);
     }
-    if (reduced) { el.classList.add('gone'); return; }
     var probe = document.createElement('span');
     probe.textContent = 'MMMMMMMMMM';
     log.appendChild(probe);
@@ -470,7 +469,7 @@
       el.setAttribute('aria-label', text.replace(/\s+/g, ' '));
       var busy = false, seen = false;
       function run() {
-        if (reduced || busy) return;
+        if (busy) return;
         busy = true;
         var n = text.length, start = performance.now(), dur = 450 + n * 16;
         (function step(now) {
@@ -503,14 +502,13 @@
       })();
     }
     function doLaugh() {
-      if (reduced) return;
       laugh.classList.remove('on');
       void laugh.offsetWidth;
       laugh.classList.add('on');
       A.views.forEach(function (v) { if (v.visible) v.kick(0.6); });
     }
     function play() {
-      if (busy || reduced) return;
+      if (busy) return;
       busy = true;
       a.textContent = ''; b.textContent = '';
       type(a, 'PRESENT DAY', function () {
@@ -661,7 +659,7 @@
       setTimeout(function () { q.classList.remove('on'); }, ms);
     }
     function begin() {
-      questions(reduced ? 0 : 650);
+      questions(650);
       setTimeout(function () {
         if (Sound.play(T[idx])) {
           playing = true;
@@ -670,7 +668,7 @@
           playBtn.setAttribute('aria-label', 'Pause');
           status.textContent = 'playing';
         } else status.textContent = 'no audio';
-      }, reduced ? 0 : 320);
+      }, 320);
     }
     function pause() {
       Sound.stop();
@@ -750,7 +748,7 @@
 
   /* ---------- cursor trail ---------- */
   function trail() {
-    if (reduced || !window.matchMedia('(pointer: fine)').matches) return;
+    if (!window.matchMedia('(pointer: fine)').matches) return;
     var box = $('#trail'), pool = [], i = 0, last = 0;
     var CH = '01.:;+*#@<>/\\|アイウエオレイ';
     for (var k = 0; k < 28; k++) { var s = document.createElement('span'); box.appendChild(s); pool.push(s); }
@@ -770,8 +768,9 @@
   }
 
   /* ---------- ?????????? ---------- */
+  // the glitches are part of the site, so they run even when the system asks for less motion;
+  // then the ones that come on their own are only rarer and softer
   function bursts() {
-    if (reduced) return;
     var box = $('#glitches');
     function once() {
       if (!document.hidden) {
@@ -784,9 +783,9 @@
           box.appendChild(s);
           setTimeout(s.remove.bind(s), rand(180, 650));
         }
-        A.views.forEach(function (v) { if (v.visible) v.kick(0.7); });
+        A.views.forEach(function (v) { if (v.visible) v.kick(reduced ? 0.45 : 0.7); });
       }
-      setTimeout(once, rand(10000, 24000));
+      setTimeout(once, reduced ? rand(18000, 36000) : rand(10000, 24000));
     }
     setTimeout(once, rand(7000, 12000));
   }
@@ -890,7 +889,7 @@
         view.kick(1);
       });
       Sound.glitch.open();
-      if (!reduced) timers.push(setTimeout(jolt, 120));
+      timers.push(setTimeout(jolt, 120));
       timers.push(setTimeout(function () { if (view) view.kick(1); Sound.glitch.chew(); }, 1400));
       timers.push(setTimeout(function () { if (view) view.kick(0.9); Sound.glitch.burst(); }, 2250));
       timers.push(setTimeout(function () { close(true); }, 3000));
