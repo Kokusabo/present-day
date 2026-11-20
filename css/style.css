@@ -688,3 +688,34 @@ main {
   /* the glitches stay (they are the point of the site); only scrolling jumps instead of gliding */
   html { scroll-behavior: auto; }
 }
+
+/* my projects: a folder window, like the message window */
+.dir {
+  max-width: 760px;
+  border: 1px solid var(--red-dim);
+  background: linear-gradient(#0e0b0c, #060506);
+  font-size: 0.86rem;
+}
+.dir-head, .dir-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr) minmax(0, 0.8fr);
+  gap: 12px;
+  padding: 9px 12px;
+}
+.dir-head { margin: 0; color: var(--dim); font-size: var(--t-xs); border-bottom: 1px solid var(--red-deep); }
+.dir-list { margin: 0; padding: 0; list-style: none; }
+.dir-row { color: var(--bone); text-decoration: none; border-bottom: 1px dashed var(--red-deep); }
+.dir-what { color: var(--ash); font-style: italic; }
+.dir-st { text-align: right; color: var(--dim); }
+.dir-ico { color: var(--blood); }
+.here .dir-st { color: var(--blood); }
+a.dir-row:hover, a.dir-row:focus-visible { background: var(--blood); color: var(--white); }
+a.dir-row:hover .dir-what, a.dir-row:hover .dir-st, a.dir-row:hover .dir-ico,
+a.dir-row:focus-visible .dir-what, a.dir-row:focus-visible .dir-st, a.dir-row:focus-visible .dir-ico { color: var(--white); }
+.empty { opacity: 0.45; }
+.dir-foot { margin: 0; padding: 7px 12px; color: var(--dim); font-size: var(--t-xs); }
+@media (max-width: 560px) {
+  .dir-head { display: none; }
+  .dir-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .dir-what { grid-column: 1 / -1; grid-row: 2; }
+}
